@@ -184,6 +184,12 @@ struct CategoryStrength: Codable, Identifiable, Hashable {
         count = try c.decodeIfPresent(Int.self, forKey: .count) ?? 0
     }
 
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(category, forKey: .category)
+        try container.encode(count, forKey: .count)
+    }
+
     init(category: String, count: Int) {
         self.category = category
         self.count = count
