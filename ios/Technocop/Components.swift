@@ -470,7 +470,7 @@ struct BatchStrengthTableView: View {
     }
 
     private var rows: [BatchRow] {
-        let eligible = contacts.filter { rankOrder($0.rank) in 0...2 }
+        let eligible = contacts.filter { (0...2).contains(rankOrder($0.rank)) }
         let grouped = Dictionary(grouping: eligible) { contact in
             contact.batch.trimmingCharacters(in: .whitespaces).isEmpty ? "Not specified" : contact.batch.trimmingCharacters(in: .whitespaces)
         }

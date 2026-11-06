@@ -89,9 +89,12 @@ struct EditProfileSheetView: View {
     init(officer: Officer) {
         _officer = State(initialValue: officer)
         _hasDoj = State(initialValue: !officer.doj.isEmpty)
-        if let d = parseDOJDate(officer.doj) {
-            _selectedDate = State(initialValue: d)
-        }
+        _selectedDate = State(initialValue: parseDOJDate(officer.doj) ?? Date())
+        _options = State(initialValue: nil)
+        _isLoadingOptions = State(initialValue: true)
+        _isSaving = State(initialValue: false)
+        _statusMessage = State(initialValue: "")
+        _isErrorMessage = State(initialValue: false)
     }
 
     // Dependent choices
