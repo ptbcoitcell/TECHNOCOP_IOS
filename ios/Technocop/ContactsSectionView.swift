@@ -95,7 +95,7 @@ struct ContactsSectionView: View {
             // 3. Districts (Zone -> Range -> Unit)
             ExpandableSection(title: "Districts", isExpanded: $districtsOpen) {
                 let districtContacts = roster.filter(isDistrictContact)
-                let zoneNames = Array(Set(ZONE_RANGE_MAP.keys + districtContacts.map(\.zone)))
+                let zoneNames = Array(Set(Array(ZONE_RANGE_MAP.keys) + districtContacts.map(\.zone)))
                     .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
                     .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
 
@@ -266,8 +266,8 @@ struct ContactUnitGroupsView: View {
                     if selected == entry.key {
                         let sortedOfficers = sortedContacts(entry.officers)
                         VStack(spacing: 3) {
-                            ForEach(Array(sortedOfficers.enumerated()), id: \.element.id) { idx, officer in
-                                ContactRowView(contact: officer, isDarker: idx % 2 == 1)
+                            ForEach(sortedOfficers.indices, id: \.self) { idx in
+                                ContactRowView(contact: sortedOfficers[idx], isDarker: idx % 2 == 1)
                             }
                         }
                         .padding(.leading, CGFloat((depth + 1) * 6))

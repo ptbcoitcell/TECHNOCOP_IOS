@@ -377,7 +377,8 @@ struct CompactStrengthTableView: View {
             .background(TechTheme.navy)
 
             // Data Rows
-            ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+            ForEach(rows.indices, id: \.self) { index in
+                let row = rows[index]
                 let isZoneHeader = rangeLayout && row.depth == 0
                 let isRangeHeader = rangeLayout && row.depth == 1
                 
@@ -529,7 +530,8 @@ struct BatchStrengthTableView: View {
             .background(TechTheme.navy)
 
             // Data Rows (Zero cells left blank!)
-            ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+            ForEach(rows.indices, id: \.self) { index in
+                let row = rows[index]
                 HStack(spacing: 0) {
                     Text(row.batch)
                         .font(.system(size: 12, weight: .semibold))
@@ -664,7 +666,8 @@ struct MinisterialStrengthTableView: View {
                 .background(TechTheme.navy)
 
                 // Data Rows
-                ForEach(Array(units.enumerated()), id: \.element.key) { index, entry in
+                ForEach(units.indices, id: \.self) { index in
+                    let entry = units[index]
                     let rankCounts = Dictionary(grouping: entry.officers) { $0.rank.trimmingCharacters(in: .whitespaces).isEmpty ? "Rank not specified" : $0.rank.trimmingCharacters(in: .whitespaces) }
                         .mapValues { $0.count }
 

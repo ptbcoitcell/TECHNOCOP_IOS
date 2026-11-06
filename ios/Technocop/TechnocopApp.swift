@@ -150,7 +150,8 @@ final class AppStore: ObservableObject {
         async let fetchContacts = api.contacts()
 
         do {
-            let (dash, dir) = try await (fetchDashboard, fetchContacts)
+            let dash = try await fetchDashboard
+            let dir = try await fetchContacts
             dashboardData = dash
             contacts = dir.contacts
             units = dir.units

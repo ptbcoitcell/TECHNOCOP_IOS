@@ -217,8 +217,8 @@ struct MainView: View {
                     return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
                 }
                 VStack(spacing: 3) {
-                    ForEach(Array(sorted.enumerated()), id: \.element.id) { idx, contact in
-                        ContactRowView(contact: contact, isDarker: idx % 2 == 1)
+                    ForEach(sorted.indices, id: \.self) { idx in
+                        ContactRowView(contact: sorted[idx], isDarker: idx % 2 == 1)
                     }
                 }
             }

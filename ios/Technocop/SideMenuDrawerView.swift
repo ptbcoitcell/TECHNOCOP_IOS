@@ -39,7 +39,8 @@ struct SideMenuDrawerView: View {
                                 .font(.system(size: 13))
                                 .foregroundStyle(TechTheme.textLightHeader)
 
-                            let rankBatch = [officer.rank, officer.batch.isEmpty ? nil : "Batch \(officer.batch)"]
+                            let rankParts: [String?] = [officer.rank, officer.batch.isEmpty ? nil : "Batch \(officer.batch)"]
+                            let rankBatch = rankParts
                                 .compactMap { $0 }
                                 .filter { !$0.isEmpty }
                                 .joined(separator: " • ")

@@ -187,8 +187,8 @@ struct SearchSectionView: View {
                     .padding(.vertical, 16)
             } else {
                 VStack(spacing: 3) {
-                    ForEach(Array(results.enumerated()), id: \.element.id) { idx, officer in
-                        ContactRowView(contact: officer, isDarker: idx % 2 == 1)
+                    ForEach(results.indices, id: \.self) { idx in
+                        ContactRowView(contact: results[idx], isDarker: idx % 2 == 1)
                     }
                 }
             }
