@@ -20,7 +20,8 @@ jobs:
         run: |
           xcodebuild -version
 
-      - name: Build for iOS Simulator (For Appetize.io / Simulator Testing)
+      # 1. BUILD FOR WEB SIMULATOR (Appetize.io / Simulator)
+      - name: Build for iOS Simulator
         run: |
           xcodebuild clean build \
             -project ios/Technocop.xcodeproj \
@@ -33,26 +34,36 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CONFIGURATION_BUILD_DIR="${{ github.workspace }}/build/simulator"
 
-      - name: Compress Simulator App (Ready for Web Simulator / Appetize.io)
+      # 2. BUILD REAL ARM64 BINARY FOR PHYSICAL IPHONE DEVICE (Sideloadly / AltStore)
+      - name: Build for Physical iOS Device (ARM64)
         run: |
-          cd "${{ github.workspace }}/build/simulator"
-          zip -r -X "${{ github.workspace }}/Technocop-Simulator.zip" Technocop.app
+          xcodebuild clean build \
+            -project ios/Technocop.xcodeproj \
+            -scheme Technocop \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CONFIGURATION_BUILD_DIR="${{ github.workspace }}/build/device"
 
-      - name: Build Unsigned IPA for Device Sideloading (Windows USB install)
+      - name: Package Physical Device IPA
         run: |
-          mkdir -p "${{ github.workspace }}/build/Payload"
-          cp -R "${{ github.workspace }}/build/simulator/Technocop.app" "${{ github.workspace }}/build/Payload/"
-          cd "${{ github.workspace }}/build"
-          zip -r -X "${{ github.workspace }}/Technocop-Unsigned.ipa" Payload
+          mkdir -p "${{ github.workspace }}/build/device-payload/Payload"
+          cp -R "${{ github.workspace }}/build/device/Technocop.app" "${{ github.workspace }}/build/device-payload/Payload/"
+          cd "${{ github.workspace }}/build/device-payload"
+          zip -r -X "${{ github.workspace }}/Technocop-Device.ipa" Payload
 
-      - name: Upload Simulator Build (For Browser / Simulator Testing)
+      # UPLOAD ARTIFACTS
+      - name: Upload Web Simulator Bundle (Appetize.io)
         uses: actions/upload-artifact@v4
         with:
           name: Technocop-Simulator
-          path: Technocop-Simulator.zip
+          path: build/simulator/Technocop.app
 
-      - name: Upload IPA Artifact
+      - name: Upload Physical Device IPA (For Sideloadly on iPhone)
         uses: actions/upload-artifact@v4
         with:
-          name: Technocop-Unsigned-IPA
-          path: Technocop-Unsigned.ipa
+          name: Technocop-Device-IPA
+          path: Technocop-Device.ipa
