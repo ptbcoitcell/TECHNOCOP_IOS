@@ -89,7 +89,7 @@ struct EditProfileSheetView: View {
     init(officer: Officer) {
         _officer = State(initialValue: officer)
         _hasDoj = State(initialValue: !officer.doj.isEmpty)
-        if let d = parseDateString(officer.doj) {
+        if let d = parseDOJDate(officer.doj) {
             _selectedDate = State(initialValue: d)
         }
     }
@@ -231,7 +231,7 @@ struct EditProfileSheetView: View {
                             if !enabled {
                                 officer.doj = ""
                             } else {
-                                officer.doj = formatDate(selectedDate)
+                                officer.doj = formatDOJDate(selectedDate)
                             }
                         }
 
@@ -243,7 +243,7 @@ struct EditProfileSheetView: View {
                         )
                         .datePickerStyle(.compact)
                         .onChange(of: selectedDate) { date in
-                            officer.doj = formatDate(date)
+                            officer.doj = formatDOJDate(date)
                         }
                     }
                 }
@@ -320,19 +320,5 @@ struct EditProfileSheetView: View {
             isErrorMessage = true
             statusMessage = "Could not update profile. Please try again."
         }
-    }
-
-    private func formatDate(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "dd/MM/yyyy"
-        f.locale = Locale(identifier: "en_GB")
-        return f.string(from: date)
-    }
-
-    private static func parseDateString(_ str: String) -> Date? {
-        let f = DateFormatter()
-        f.dateFormat = "dd/MM/yyyy"
-        f.locale = Locale(identifier: "en_GB")
-        return f.date(from: str)
     }
 }

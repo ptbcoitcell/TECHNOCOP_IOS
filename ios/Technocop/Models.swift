@@ -502,3 +502,20 @@ func profileZoneComparator() -> (String, String) -> Bool {
         return a.localizedCaseInsensitiveCompare(b) == .orderedAscending
     }
 }
+
+// MARK: - Date Formatting Helpers
+
+func formatDOJDate(_ date: Date) -> String {
+    let f = DateFormatter()
+    f.dateFormat = "dd/MM/yyyy"
+    f.locale = Locale(identifier: "en_GB")
+    return f.string(from: date)
+}
+
+func parseDOJDate(_ str: String) -> Date? {
+    let f = DateFormatter()
+    f.dateFormat = "dd/MM/yyyy"
+    f.locale = Locale(identifier: "en_GB")
+    return f.date(from: str.trimmingCharacters(in: .whitespacesAndNewlines))
+}
+
