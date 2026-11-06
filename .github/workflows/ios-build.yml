@@ -10,15 +10,14 @@ on:
 jobs:
   build:
     name: Build iOS App & Simulator Bundle
-    runs-on: macos-14
+    runs-on: macos-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Select Xcode
+      - name: Check Xcode Version
         run: |
-          sudo xcode-select -s /Applications/Xcode_15.4.app || sudo xcode-select -s /Applications/Xcode.app
           xcodebuild -version
 
       - name: Build for iOS Simulator (For Appetize.io / Simulator Testing)
