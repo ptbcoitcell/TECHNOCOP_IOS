@@ -54,6 +54,9 @@ public struct TroubleshootingArticle: Identifiable, Codable, Equatable {
 
     public var title: String { problemTitle }
     public var difficulty: KnowledgeDifficulty { difficultyLevel }
+    public var toolsRequired: [String] { requiredTools }
+    public var solutionSteps: [String] { stepByStepSolution }
+    public var escalationGuidelines: String? { whenToEscalate }
     public var estimatedReadTime: String {
         let count = symptoms.count + possibleCauses.count + stepByStepSolution.count
         return count <= 8 ? "3 min read" : (count <= 14 ? "5 min read" : "8 min read")

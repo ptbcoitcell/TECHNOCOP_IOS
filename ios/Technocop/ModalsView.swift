@@ -55,6 +55,8 @@ struct ModalsHostView: View {
                 )
             case .specialDays:
                 SpecialDaysModalView(onDismiss: onDismiss)
+            default:
+                EmptyView()
             }
         }
     }
@@ -442,7 +444,7 @@ struct TechPlatformModalView: View {
 
     private var filteredBulletins: [TechBulletin] {
         allBulletins.filter { b in
-            (selectedCategory == "ALL" || b.category == selectedCategory) &&
+            (selectedCategory == "ALL" || b.category.rawValue == selectedCategory) &&
             (searchQuery.isEmpty || b.title.localizedCaseInsensitiveContains(searchQuery) || b.summary.localizedCaseInsensitiveContains(searchQuery))
         }
     }
@@ -513,7 +515,7 @@ struct TechPlatformModalView: View {
                         ForEach(filteredBulletins) { b in
                             VStack(alignment: .leading, spacing: 6) {
                                 HStack {
-                                    Text(b.category)
+                                    Text(b.category.displayNameEn)
                                         .font(.system(size: 10 * themeManager.fontScale, weight: .bold))
                                         .foregroundColor(themeManager.primaryColor)
                                         .padding(.horizontal, 6)

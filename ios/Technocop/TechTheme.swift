@@ -147,6 +147,10 @@ public final class TechThemeManager: ObservableObject {
         UserDefaults.standard.set(newPalette.id, forKey: "technocop_palette_id")
     }
 
+    public func setPalette(_ paletteId: String) {
+        setPalette(findPaletteById(paletteId))
+    }
+
     public func setThemeMode(_ mode: String) {
         self.themeMode = mode
         UserDefaults.standard.set(mode, forKey: "technocop_theme_mode")

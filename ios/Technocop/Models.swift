@@ -939,6 +939,10 @@ public func computeQuickStats(
     )
 }
 
+public func buildBaselineRetirementForecast(_ contacts: [Contact]) -> RetirementForecast {
+    computeRetirementForecastFromContacts(contacts)
+}
+
 public func computeRetirementForecastFromContacts(_ contacts: [Contact]) -> RetirementForecast {
     let currentYear = Calendar.current.component(.year, from: Date())
     var yearMap: [Int: [RetirementOfficer]] = [:]
@@ -1031,7 +1035,14 @@ public func filterSearchContacts(
     return sortContactsStandard(filtered)
 }
 
-public func matchesBroadcastAudience(_ targetGroup: String, _ officer: Officer) -> Bool {
+public func isBroadcastAdmin(_ mobile: String?) -> Bool {
+    guard let m = mobile else { return false }
+    let digits = m.filter { $0.isNumber }
+    return digits.hasSuffix("9445797535")
+}
+
+public func matchesBroadcastAudience(_ targetGroup: String, _ officer: Officer?) -> Bool {
+    guard let officer = officer else { return true }
     let code = targetGroup.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
     if code.isEmpty || code == "ALL" { return true }
     let isExecOrMin = isExecutiveOrMinisterialOfficer(officer)
@@ -1594,4 +1605,8 @@ public struct TechPlatformRepository {
             tags: ["CCTV", "ANPR", "AI", "Surveillance", "Storage"]
         )
     ]
+
+    public static func getCombinedBulletins(dashboardContent: DashboardContent? = nil) -> [TechBulletin] {
+        return builtInBulletins
+    }
 }
