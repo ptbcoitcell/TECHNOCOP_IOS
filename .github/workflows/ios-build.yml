@@ -55,12 +55,17 @@ jobs:
           cd "${{ github.workspace }}/build/device-payload"
           zip -r -X "${{ github.workspace }}/Technocop-Device.ipa" Payload
 
+      - name: Package Web Simulator Zip (for Appetize.io)
+        run: |
+          cd "${{ github.workspace }}/build/simulator"
+          zip -r -X "${{ github.workspace }}/Technocop-Simulator-v3.21.zip" Technocop.app
+
       # UPLOAD ARTIFACTS
       - name: Upload Web Simulator Bundle (Appetize.io)
         uses: actions/upload-artifact@v4
         with:
           name: Technocop-Simulator
-          path: build/simulator/Technocop.app
+          path: Technocop-Simulator-v3.21.zip
 
       - name: Upload Physical Device IPA (For Sideloadly on iPhone)
         uses: actions/upload-artifact@v4
