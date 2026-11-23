@@ -116,6 +116,8 @@ public let AvailablePalettes: [AppPalette] = [
     PaletteCarbonSlate
 ]
 
+public let AllAppPalettes: [AppPalette] = AvailablePalettes
+
 public func findPaletteById(_ id: String) -> AppPalette {
     AvailablePalettes.first { $0.id.caseInsensitiveCompare(id) == .orderedSame } ?? PalettePoliceNavy
 }
