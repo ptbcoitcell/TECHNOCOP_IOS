@@ -12,11 +12,12 @@ struct LoginView: View {
                 VStack(spacing: 0) {
                     Spacer(minLength: max(20, geometry.size.height * 0.06))
 
-                    // Tamil Nadu Police Logo Emblem
-                    Image("TamilNaduPoliceLogo")
+                    // TECHNOCOP App Logo
+                    Image("TechnocopLogo")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 140, height: 140)
+                        .frame(width: 130, height: 130)
+                        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
                         .padding(.bottom, 12)
 
                     // Title & Tagline
