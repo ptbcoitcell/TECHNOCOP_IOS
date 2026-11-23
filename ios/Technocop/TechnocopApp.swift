@@ -290,6 +290,14 @@ final class AppStore: ObservableObject {
         dashboardCategory = category
     }
 
+    func navigateToPage(_ p: String) {
+        page = p
+    }
+
+    func openModal(_ modal: DashboardModalType) {
+        activeModal = modal
+    }
+
     // MARK: - Favorites
 
     func toggleFavorite(_ contact: Contact) {

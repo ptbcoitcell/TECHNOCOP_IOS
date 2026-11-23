@@ -48,47 +48,15 @@ struct MainView: View {
 
                                     switch category {
                                     case "my_unit":
-                                        if let officer = store.session?.officer {
-                                            MyUnitSectionView(
-                                                officer: officer,
-                                                contacts: store.contacts,
-                                                isLoading: store.isLoading && store.contacts.isEmpty,
-                                                error: store.contactsError,
-                                                favoriteNumbers: store.favoriteNumbers,
-                                                onToggleFavorite: { store.toggleFavorite($0) }
-                                            )
-                                        }
+                                        MyUnitSectionView()
                                     case "organization":
-                                        OrganizationSectionView(
-                                            counts: store.dashboardData,
-                                            contacts: store.contacts,
-                                            error: store.dashboardError,
-                                            contactsError: store.contactsError,
-                                            lastUpdated: store.lastRefreshedAt,
-                                            onRetry: { Task { await store.refreshData() } }
-                                        )
+                                        OrganizationSectionView()
                                     case "directory":
-                                        ContactsSectionView(
-                                            contacts: store.contacts,
-                                            units: store.units,
-                                            unitCategories: store.unitCategories,
-                                            isLoading: store.isLoading && store.contacts.isEmpty,
-                                            error: store.contactsError,
-                                            favoriteNumbers: store.favoriteNumbers,
-                                            onToggleFavorite: { store.toggleFavorite($0) }
-                                        )
+                                        ContactsSectionView()
                                     case "favourites":
-                                        FavouritesSectionView(
-                                            contacts: store.contacts,
-                                            favoriteNumbers: store.favoriteNumbers,
-                                            onToggleFavorite: { store.toggleFavorite($0) }
-                                        )
+                                        FavouritesSectionView()
                                     case "search":
-                                        SearchSectionView(
-                                            contacts: store.contacts,
-                                            favoriteNumbers: store.favoriteNumbers,
-                                            onToggleFavorite: { store.toggleFavorite($0) }
-                                        )
+                                        SearchSectionView()
                                     case "retirement":
                                         RetirementSectionView(
                                             forecast: store.retirementForecast,
@@ -99,32 +67,7 @@ struct MainView: View {
                                         EmptyView()
                                     }
                                 } else {
-                                    ModernDashboardView(
-                                        officer: store.session?.officer,
-                                        counts: store.dashboardData,
-                                        contacts: store.contacts,
-                                        birthdayData: store.birthdayData,
-                                        dashboardContent: store.dashboardContent,
-                                        retirementForecast: store.retirementForecast,
-                                        favoriteCount: store.favoriteNumbers.count,
-                                        lastRefreshedAt: store.lastRefreshedAt,
-                                        isRefreshing: store.isRefreshing,
-                                        syncError: store.dashboardError.isEmpty ? store.contactsError : store.dashboardError,
-                                        onRefresh: { Task { await store.refreshData() } },
-                                        onMyUnit: { store.dashboardCategory = "my_unit" },
-                                        onOrganization: { store.dashboardCategory = "organization" },
-                                        onDirectory: { store.dashboardCategory = "directory" },
-                                        onSearch: { store.dashboardCategory = "search" },
-                                        onFavourites: { store.dashboardCategory = "favourites" },
-                                        onRetirementForecast: { store.dashboardCategory = "retirement" },
-                                        onKnowledgeCentre: { store.dashboardCategory = "knowledge" },
-                                        onProfile: { store.page = "profile" },
-                                        onOpenBirthdays: { store.activeModal = .birthdays },
-                                        onOpenAnnouncements: { store.activeModal = .announcements },
-                                        onOpenDigest: { store.activeModal = .digest },
-                                        onOpenSpecialDays: { store.activeModal = .specialDays },
-                                        onOpenCallerIdSetup: { showCallerIdDialog = true }
-                                    )
+                                    ModernDashboardView()
                                 }
                             } else if store.page == "profile" {
                                 CategorySubscreenHeaderView(
