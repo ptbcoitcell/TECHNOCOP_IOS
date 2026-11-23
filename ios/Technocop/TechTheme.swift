@@ -130,7 +130,7 @@ public final class TechThemeManager: ObservableObject {
     @Published public var fontScale: CGFloat = 1.0 // 0.85, 1.0, 1.15, 1.30
     @Published public var isDarkActive: Bool = false
 
-    private init() {
+    public init() {
         let savedMode = UserDefaults.standard.string(forKey: "technocop_theme_mode") ?? "SYSTEM"
         let savedPalette = UserDefaults.standard.string(forKey: "technocop_palette_id") ?? "navy"
         let savedScale = UserDefaults.standard.double(forKey: "technocop_font_scale")

@@ -323,6 +323,8 @@ public struct BirthdayFeed: Codable {
 
 // MARK: - Official Content & Announcement Models
 
+public typealias Announcement = ContentItem
+
 public struct ContentItem: Codable, Identifiable, Hashable {
     public let title: String
     public let body: String
