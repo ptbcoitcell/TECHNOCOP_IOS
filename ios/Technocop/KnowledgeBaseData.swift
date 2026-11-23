@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 fileprivate func listOf<T>(_ elements: T...) -> [T] { elements }
+fileprivate typealias Pair = DiagnosticCommand
 
 // MARK: - Tech-Knowledge Base Models
 
@@ -2052,7 +2053,7 @@ public enum KnowledgeBaseArticles {
             domain: .software,
             requiredTools: listOf("Services (services.msc)", "Latest OEM RD Service Driver", "Web Browser Flags"),
             stepByStepSolution: listOf("Open Run (Win + R), type 'services.msc' and press Enter.", "Locate 'MorphoSmart RD Service' or 'Mantra MFS100 RD Service'.", "Right-click and click 'Restart'. Wait for popup: 'Device attached. Ready to use'.", "Allow Localhost in Chrome: Open Chrome and browse to: 'chrome://flags/#allow-insecure-localhost'.", "Set 'Allow invalid certificates for resources loaded from localhost' to 'Enabled' and relaunch Chrome.", "If error says 'Device not whitelisted': Visit official OEM portal (e.g. rdserviceonline.com) and check device serial number annual validity.", "Disconnect USB biometric scanner and reconnect directly to motherboard rear USB port."),
-            diagnosticCommands: listOf(Pair("net stop \"Morpho RD Service\" && net start \"Morpho RD Service\"", "Restarts Morpho biometric service from command line")),
+            diagnosticCommands: listOf(DiagnosticCommand("net stop \"Morpho RD Service\" && net start \"Morpho RD Service\"", "Restarts Morpho biometric service from command line")),
             expectedResult: "Biometric sensor flashes red optical light; fingerprint captures with 95%+ match score.",
             safetyPrecautions: "Clean glass prism with soft lint-free cloth lightly dampened with water; never use harsh acetone solvents.",
             whenToEscalate: "If glass prism is scratched or optical sensor has internal delamination, replace biometric sensor unit.",
@@ -2426,7 +2427,7 @@ public enum KnowledgeBaseArticles {
             domain: .software,
             requiredTools: listOf("Windows Defender Firewall with Advanced Security (wf.msc)"),
             stepByStepSolution: listOf("First check Network Profile: Settings -> Network & internet -> Properties -> ensure network is set to 'Private network' (NOT Public).", "Open Advanced Firewall: Press Win + R, type 'wf.msc' and press Enter.", "Click 'Inbound Rules' on left sidebar -> click 'New Rule...' on right actions pane.", "Rule Type: Select 'Port' -> click Next.", "Protocol & Ports: Select 'TCP', enter 'Specific local ports' (e.g. 8080, 554) -> Next.", "Action: Select 'Allow the connection' -> Next.", "Profile: Check 'Domain' and 'Private' (uncheck Public) -> Next.", "Name: Enter descriptive name (e.g. 'Police Database Server Port 8080') -> click Finish.", "Connection will now be accepted securely without needing to disable the entire firewall."),
-            diagnosticCommands: listOf(Pair("netsh advfirewall firewall add rule name=\"App Port\" dir=in action=allow protocol=TCP localport=8080", "CLI command to create inbound firewall port rule")),
+            diagnosticCommands: listOf(DiagnosticCommand("netsh advfirewall firewall add rule name=\"App Port\" dir=in action=allow protocol=TCP localport=8080", "CLI command to create inbound firewall port rule")),
             expectedResult: "Station workstations connect to local database server smoothly while maintaining full firewall defense.",
             safetyPrecautions: "NEVER completely disable Windows Defender Firewall on police network terminals.",
             whenToEscalate: "If connection still fails with port allowed, verify the server software is binding to 0.0.0.0 (all interfaces) rather than 127.0.0.1 (localhost only).",
@@ -2492,7 +2493,7 @@ public enum KnowledgeBaseArticles {
             domain: .software,
             requiredTools: listOf("Command Prompt (Run as Administrator)"),
             stepByStepSolution: listOf("Open Command Prompt as Administrator.", "Step 1 - Check health: 'DISM /Online /Cleanup-Image /CheckHealth' (takes 10 seconds).", "Step 2 - Scan health: 'DISM /Online /Cleanup-Image /ScanHealth' (takes 2-5 minutes to verify component store).", "Step 3 - Restore health: 'DISM /Online /Cleanup-Image /RestoreHealth' (repairs corrupt component store files from Windows Update or clean source).", "Step 4 - Run SFC: Once DISM finishes with 'The operation completed successfully', run 'sfc /scannow'.", "SFC will now report: 'Windows Resource Protection found corrupt files and successfully repaired them'.", "Restart the PC to finalize all component store replacements."),
-            diagnosticCommands: listOf(DiagnosticCommand("DISM /Online /Cleanup-Image /RestoreHealth", "Repairs damaged Windows OS master component store"), DiagnosticCommand("sfc /scannow", "Scans and replaces corrupted system DLLs and drivers from component store"), Pair("findstr /c:\"[SR]\" %windir%\\logs\\cbs\\cbs.log > \"%userprofile%\\desktop\\sfcdetails.txt\"", "Extracts list of repaired files to a text file on desktop")),
+            diagnosticCommands: listOf(DiagnosticCommand("DISM /Online /Cleanup-Image /RestoreHealth", "Repairs damaged Windows OS master component store"), DiagnosticCommand("sfc /scannow", "Scans and replaces corrupted system DLLs and drivers from component store"), DiagnosticCommand("findstr /c:\"[SR]\" %windir%\\logs\\cbs\\cbs.log > \"%userprofile%\\desktop\\sfcdetails.txt\"", "Extracts list of repaired files to a text file on desktop")),
             expectedResult: "Operating system files verified 100% integral; sluggishness, glitches, and system crashes resolved.",
             safetyPrecautions: "Ensure computer has active internet connection or local Windows ISO mounted when executing RestoreHealth.",
             whenToEscalate: "If DISM reports error 0x800f081f (source files could not be found), specify offline WIM source: 'DISM /Online /Cleanup-Image /RestoreHealth /Source:WIM:D:\\sources\\install.wim:1 /LimitAccess'.",
@@ -2668,7 +2669,7 @@ public enum KnowledgeBaseArticles {
             domain: .software,
             requiredTools: listOf("Command Prompt as Administrator", "USB Flash Drive or External HDD"),
             stepByStepSolution: listOf("Create a folder to store the exported drivers (e.g. 'D:\\DriversBackup').", "Open Command Prompt as Administrator.", "Execute DISM driver export command: 'dism /online /export-driver /destination:\"D:\\DriversBackup\"'.", "Press Enter. DISM will scan all installed drivers and export raw .inf, .sys, and .cat driver packages for every device.", "After formatting Windows, open Device Manager, right-click any missing device with yellow question mark.", "Select 'Update driver' -> 'Browse my computer for drivers' -> select 'D:\\DriversBackup' (check 'Include subfolders') -> Next.", "Windows will automatically detect and install the perfect driver in seconds without internet."),
-            diagnosticCommands: listOf(Pair("dism /online /export-driver /destination:\"PATH\"", "Exports all third-party drivers to designated folder")),
+            diagnosticCommands: listOf(DiagnosticCommand("dism /online /export-driver /destination:\"PATH\"", "Exports all third-party drivers to designated folder")),
             expectedResult: "Complete collection of working hardware drivers safely backed up for instant offline reinstallation.",
             safetyPrecautions: "Ensure target backup folder is on a secondary partition (D: or USB), not the C: drive being formatted.",
             whenToEscalate: "If a specific driver fails to restore, identify hardware VEN/DEV ID in Device Manager details tab.",

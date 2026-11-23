@@ -1390,6 +1390,13 @@ public enum TechCategory: String, CaseIterable, Identifiable {
     case hardwareTower = "HARDWARE_TOWER"
     case technicalSop = "TECHNICAL_SOP"
 
+    public static let WIRELESS_RADIO = TechCategory.wirelessRadio.rawValue
+    public static let CCTV_SURVEILLANCE = TechCategory.surveillanceCctv.rawValue
+    public static let NETWORK_CYBER = TechCategory.cyberSecurity.rawValue
+    public static let COMPUTER_HARDWARE = TechCategory.hardwareTower.rawValue
+    public static let SOFTWARE_APPS = TechCategory.technicalSop.rawValue
+    public static let ADMIN_GOS = TechCategory.govtOrder.rawValue
+
     public var id: String { rawValue }
 
     public var displayNameEn: String {

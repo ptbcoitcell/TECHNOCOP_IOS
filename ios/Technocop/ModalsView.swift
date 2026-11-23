@@ -423,7 +423,7 @@ struct TechPlatformModalView: View {
     @State private var searchQuery: String = ""
     @State private var selectedCategory: String = "ALL"
 
-    private let categories = [
+    private let categories: [String] = [
         "ALL",
         TechCategory.WIRELESS_RADIO,
         TechCategory.CCTV_SURVEILLANCE,
