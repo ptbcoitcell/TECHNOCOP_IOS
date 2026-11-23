@@ -1,14 +1,17 @@
 import SwiftUI
 
-enum DashboardModalType: String, Identifiable {
+public enum DashboardModalType: String, Identifiable {
     case birthdays
     case announcements
     case digest
     case retirement
     case techPlatform
     case specialDays
+    case callerId
+    case knowledgeCentre
+    case themeDialog
 
-    var id: String { rawValue }
+    public var id: String { rawValue }
 }
 
 struct ModalsHostView: View {

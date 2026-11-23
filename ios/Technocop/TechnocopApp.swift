@@ -286,10 +286,18 @@ final class AppStore: ObservableObject {
         broadcastPopupAnnouncement = nil
     }
 
+    func selectCategory(_ category: String) {
+        dashboardCategory = category
+    }
+
     // MARK: - Favorites
 
     func toggleFavorite(_ contact: Contact) {
-        let clean = contact.mobile.filter { $0.isNumber }
+        toggleFavorite(contact.mobile)
+    }
+
+    func toggleFavorite(_ mobile: String) {
+        let clean = mobile.filter { $0.isNumber }
         let key = String(clean.suffix(10))
         guard !key.isEmpty else { return }
         if favoriteNumbers.contains(key) {

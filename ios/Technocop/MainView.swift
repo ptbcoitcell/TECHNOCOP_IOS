@@ -19,8 +19,8 @@ struct MainView: View {
                 // Main Content
                 if store.page == "home" && store.dashboardCategory == "knowledge" {
                     KnowledgeCentreView(
-                        onBack = { store.dashboardCategory = nil },
-                        onOpenDigest = { store.activeModal = .digest }
+                        onBack: { store.dashboardCategory = nil },
+                        onOpenDigest: { store.activeModal = .digest }
                     )
                 } else {
                     ScrollView {

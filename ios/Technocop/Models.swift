@@ -323,6 +323,31 @@ public struct BirthdayFeed: Codable {
 
 // MARK: - Official Content & Announcement Models
 
+public enum BroadcastTarget: String, CaseIterable, Identifiable {
+    case all = "ALL"
+    case technical = "TECHNICAL"
+    case cities = "CITIES"
+    case districts = "DISTRICTS"
+    case itCell = "IT_CELL"
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .all: return "All Officers"
+        case .technical: return "Technical Wing"
+        case .cities: return "City Police Units"
+        case .districts: return "District Police Units"
+        case .itCell: return "IT Cell Only"
+        }
+    }
+
+    public static func fromCode(_ code: String) -> BroadcastTarget {
+        let clean = code.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        return BroadcastTarget(rawValue: clean) ?? .all
+    }
+}
+
 public typealias Announcement = ContentItem
 
 public struct ContentItem: Codable, Identifiable, Hashable {
@@ -534,11 +559,13 @@ public struct AppUpdate: Codable {
     public let versionName: String
     public let downloadUrl: String
     public let releaseNotes: String
+    public let versionCode: Int
 
-    public init(versionName: String, downloadUrl: String, releaseNotes: String = "") {
+    public init(versionName: String, downloadUrl: String, releaseNotes: String = "", versionCode: Int = 42) {
         self.versionName = versionName
         self.downloadUrl = downloadUrl
         self.releaseNotes = releaseNotes
+        self.versionCode = versionCode
     }
 }
 

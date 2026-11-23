@@ -2,6 +2,8 @@ import SwiftUI
 
 // MARK: - Modern Dashboard View (Matching Android ModernDashboard)
 
+public typealias ModernDashboardView = DashboardSectionView
+
 public struct DashboardSectionView: View {
     @EnvironmentObject private var store: AppStore
 
@@ -93,7 +95,11 @@ public struct DashboardSectionView: View {
             let myUnitSub = myUnitCount > 0 ? "\(myUnitCount) colleague\(myUnitCount == 1 ? "" : "s") in unit" : "Your unit contacts"
             let dirSub = store.contacts.count > 0 ? "\(store.contacts.count) staff contacts" : "Browse staff contacts"
             let favSub = store.favoriteNumbers.count > 0 ? "\(store.favoriteNumbers.count) saved" : "Quick 1-tap contacts"
-            let orgSub = store.dashboardData.map { "\($0.sps + $0.addlSps + $0.dsps + $0.inspectors + $0.subInspectors) technical officers" } ?? "View organization strength"
+            let totalTechOfficers: Int = {
+                guard let d = store.dashboardData else { return 0 }
+                return d.sps + d.addlSps + d.dsps + d.inspectors + d.subInspectors
+            }()
+            let orgSub = totalTechOfficers > 0 ? "\(totalTechOfficers) technical officers" : "View organization strength"
             let upcomingCount = store.retirementForecast?.years.reduce(0, { $0 + $1.count }) ?? 0
             let retSub = upcomingCount > 0 ? "\(upcomingCount) in forecast" : "Forecast by year"
 
