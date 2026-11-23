@@ -939,7 +939,7 @@ public func computeQuickStats(
     )
 }
 
-public func buildBaselineRetirementForecast(_ contacts: [Contact]) -> RetirementForecast {
+public func buildBaselineRetirementForecast(_ contacts: [Contact] = []) -> RetirementForecast {
     computeRetirementForecastFromContacts(contacts)
 }
 
@@ -1469,6 +1469,7 @@ public struct TechBulletin: Identifiable, Equatable {
     public let detailedContent: String
     public let tags: [String]
     public let documentUrl: String
+    public var fileUrl: String? { documentUrl.isEmpty ? nil : documentUrl }
 
     public init(
         id: String,
