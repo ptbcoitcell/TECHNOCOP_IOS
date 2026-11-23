@@ -23,6 +23,8 @@ struct ModalsHostView: View {
     let currentOfficer: Officer?
     let onDismiss: () -> Void
     var onPostBroadcast: ((String, String, String, String, String, @escaping () -> Void) -> Void)? = nil
+    var onUpdateBroadcast: ((Announcement, String, String, String, String, String, @escaping () -> Void) -> Void)? = nil
+    var onDeleteBroadcast: ((Announcement, @escaping () -> Void) -> Void)? = nil
 
     @EnvironmentObject var themeManager: TechThemeManager
 
@@ -39,7 +41,9 @@ struct ModalsHostView: View {
                     content: dashboardContent,
                     currentOfficer: currentOfficer,
                     onDismiss: onDismiss,
-                    onPostBroadcast: onPostBroadcast
+                    onPostBroadcast: onPostBroadcast,
+                    onUpdateBroadcast: onUpdateBroadcast,
+                    onDeleteBroadcast: onDeleteBroadcast
                 )
             case .digest, .techPlatform:
                 TechPlatformModalView(
@@ -194,9 +198,14 @@ struct OfficialAnnouncementsModalView: View {
     let currentOfficer: Officer?
     let onDismiss: () -> Void
     var onPostBroadcast: ((String, String, String, String, String, @escaping () -> Void) -> Void)? = nil
+    var onUpdateBroadcast: ((Announcement, String, String, String, String, String, @escaping () -> Void) -> Void)? = nil
+    var onDeleteBroadcast: ((Announcement, @escaping () -> Void) -> Void)? = nil
 
     @EnvironmentObject var themeManager: TechThemeManager
     @State private var showComposer: Bool = false
+    @State private var editingItem: Announcement? = nil
+    @State private var itemToDelete: Announcement? = nil
+    @State private var showDeleteAlert: Bool = false
 
     private var isAdmin: Bool {
         isBroadcastAdmin(currentOfficer?.mobile ?? "")
@@ -304,10 +313,36 @@ struct OfficialAnnouncementsModalView: View {
                                     .padding(.top, 2)
                                 }
 
-                                HStack {
+                                HStack(spacing: 12) {
+                                    if isAdmin {
+                                        Button(action: {
+                                            editingItem = item
+                                        }) {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "pencil")
+                                                Text("Edit")
+                                            }
+                                            .font(.system(size: 11.5 * themeManager.fontScale, weight: .semibold))
+                                            .foregroundColor(themeManager.primaryColor)
+                                        }
+
+                                        Button(action: {
+                                            itemToDelete = item
+                                            showDeleteAlert = true
+                                        }) {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "trash")
+                                                Text("Delete")
+                                            }
+                                            .font(.system(size: 11.5 * themeManager.fontScale, weight: .semibold))
+                                            .foregroundColor(.red)
+                                        }
+                                    }
+
                                     Spacer()
+
                                     Button(action: {
-                                        let msg = "📢 *\(item.title)*\n\n\(item.body)\n\n— Tamil Nadu Police Technical Services"
+                                        let msg = "📢 *\(item.title)*\n\n\(item.body)\n\n— TECHNOCOP APP"
                                         if let encoded = msg.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
                                            let url = URL(string: "https://wa.me/?text=\(encoded)") {
                                             UIApplication.shared.open(url)
@@ -342,10 +377,32 @@ struct OfficialAnnouncementsModalView: View {
         .background(themeManager.surfaceColor)
         .cornerRadius(20)
         .padding(.horizontal, 16)
+        .alert("Delete Broadcast", isPresented: $showDeleteAlert) {
+            Button("Delete", role: .destructive) {
+                if let item = itemToDelete {
+                    onDeleteBroadcast?(item) {
+                        itemToDelete = nil
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                itemToDelete = nil
+            }
+        } message: {
+            Text("Are you sure you want to delete '\(itemToDelete?.title ?? "")'? This will remove the broadcast message.")
+        }
         .sheet(isPresented: $showComposer) {
-            BroadcastComposerSheet(onPost: { title, body, priority, target, url in
+            BroadcastComposerSheet(editingItem: nil, onSave: { title, body, priority, target, url in
                 onPostBroadcast?(title, body, priority, target, url) {
                     showComposer = false
+                }
+            })
+            .environmentObject(themeManager)
+        }
+        .sheet(item: $editingItem) { item in
+            BroadcastComposerSheet(editingItem: item, onSave: { title, body, priority, target, url in
+                onUpdateBroadcast?(item, title, body, priority, target, url) {
+                    editingItem = nil
                 }
             })
             .environmentObject(themeManager)
@@ -354,15 +411,26 @@ struct OfficialAnnouncementsModalView: View {
 }
 
 private struct BroadcastComposerSheet: View {
-    let onPost: (String, String, String, String, String) -> Void
+    let editingItem: Announcement?
+    let onSave: (String, String, String, String, String) -> Void
 
     @EnvironmentObject var themeManager: TechThemeManager
     @Environment(\.presentationMode) var presentationMode
-    @State private var title: String = ""
-    @State private var bodyText: String = ""
-    @State private var priority: String = "NORMAL"
-    @State private var targetGroup: String = "ALL"
-    @State private var url: String = ""
+    @State private var title: String
+    @State private var bodyText: String
+    @State private var priority: String
+    @State private var targetGroup: String
+    @State private var url: String
+
+    init(editingItem: Announcement? = nil, onSave: @escaping (String, String, String, String, String) -> Void) {
+        self.editingItem = editingItem
+        self.onSave = onSave
+        _title = State(initialValue: editingItem?.title ?? "")
+        _bodyText = State(initialValue: editingItem?.body ?? "")
+        _priority = State(initialValue: (editingItem?.priority.isEmpty == false) ? (editingItem?.priority ?? "NORMAL") : "NORMAL")
+        _targetGroup = State(initialValue: (editingItem?.targetGroup.isEmpty == false) ? (editingItem?.targetGroup ?? "ALL") : "ALL")
+        _url = State(initialValue: editingItem?.url ?? "")
+    }
 
     var body: some View {
         NavigationView {
@@ -396,10 +464,10 @@ private struct BroadcastComposerSheet: View {
 
                 Section {
                     Button(action: {
-                        onPost(title, bodyText, priority, targetGroup, url)
+                        onSave(title, bodyText, priority, targetGroup, url)
                         presentationMode.wrappedValue.dismiss()
                     }) {
-                        Text("Push Broadcast Announcement")
+                        Text(editingItem == nil ? "Push Broadcast Announcement" : "Update Broadcast Announcement")
                             .font(.system(size: 14 * themeManager.fontScale, weight: .bold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
@@ -410,7 +478,7 @@ private struct BroadcastComposerSheet: View {
                     .disabled(title.isEmpty || bodyText.isEmpty)
                 }
             }
-            .navigationBarTitle("Compose Broadcast", displayMode: .inline)
+            .navigationBarTitle(editingItem == nil ? "Compose Broadcast" : "Edit Broadcast", displayMode: .inline)
             .navigationBarItems(trailing: Button("Cancel") { presentationMode.wrappedValue.dismiss() })
         }
     }

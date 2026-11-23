@@ -81,7 +81,10 @@ final class AppStore: ObservableObject {
             birthdayData = cachedBirthdays.value
         }
         if let cachedContent = await cache.loadContent() {
-            dashboardContent = cachedContent.value
+            var val = cachedContent.value
+            let deletedIds = Set(UserDefaults.standard.stringArray(forKey: "technocop_deleted_announcements") ?? [])
+            val.announcements.items.removeAll { deletedIds.contains($0.id) }
+            dashboardContent = val
         }
         if let cachedRetirement = await cache.loadRetirement() {
             retirementForecast = cachedRetirement.value
@@ -217,7 +220,9 @@ final class AppStore: ObservableObject {
         } catch { }
 
         do {
-            let cont = try await fetchContent
+            var cont = try await fetchContent
+            let deletedIds = Set(UserDefaults.standard.stringArray(forKey: "technocop_deleted_announcements") ?? [])
+            cont.announcements.items.removeAll { deletedIds.contains($0.id) }
             dashboardContent = cont
             await cache.saveContent(cont)
             evaluateBroadcastPopup(cont)
@@ -348,7 +353,7 @@ final class AppStore: ObservableObject {
         }
     }
 
-    // MARK: - Post Announcement
+    // MARK: - Post / Edit / Delete Announcement
 
     func postAnnouncement(title: String, message: String, priority: String, targetGroup: String, url: String, completion: @escaping () -> Void) {
         guard let cur = session else { return }
@@ -362,6 +367,65 @@ final class AppStore: ObservableObject {
                 url: url
             )
             await refreshData()
+            completion()
+        }
+    }
+
+    func updateAnnouncement(originalItem: Announcement, title: String, message: String, priority: String, targetGroup: String, url: String, completion: @escaping () -> Void) {
+        guard let cur = session else { return }
+        Task {
+            _ = try? await api.updateAnnouncement(
+                token: cur.token,
+                originalTitle: originalItem.title,
+                title: title,
+                message: message,
+                priority: priority,
+                targetGroup: targetGroup,
+                url: url
+            )
+            // Immediately update locally in memory & persistent cache
+            let updatedItem = ContentItem(
+                title: title,
+                body: message,
+                date: originalItem.date.isEmpty ? "Updated" : originalItem.date,
+                priority: priority,
+                url: url,
+                targetGroup: targetGroup
+            )
+            if var content = self.dashboardContent {
+                if let idx = content.announcements.items.firstIndex(where: { $0.id == originalItem.id }) {
+                    content.announcements.items[idx] = updatedItem
+                } else {
+                    content.announcements.items.insert(updatedItem, at: 0)
+                }
+                self.dashboardContent = content
+                await self.cache.saveContent(content)
+            }
+            completion()
+        }
+    }
+
+    func deleteAnnouncement(item: Announcement, completion: @escaping () -> Void) {
+        guard let cur = session else { return }
+        Task {
+            _ = try? await api.deleteAnnouncement(
+                token: cur.token,
+                title: item.title,
+                date: item.date,
+                priority: item.priority
+            )
+            // Save to persistent blacklist so it never reappears even after refresh
+            var deletedIds = UserDefaults.standard.stringArray(forKey: "technocop_deleted_announcements") ?? []
+            if !deletedIds.contains(item.id) {
+                deletedIds.append(item.id)
+                UserDefaults.standard.set(deletedIds, forKey: "technocop_deleted_announcements")
+            }
+            // Immediately remove from in-memory feed & persistent cache
+            if var content = self.dashboardContent {
+                content.announcements.items.removeAll { $0.id == item.id }
+                self.dashboardContent = content
+                await self.cache.saveContent(content)
+            }
             completion()
         }
     }

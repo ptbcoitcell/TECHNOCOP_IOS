@@ -378,8 +378,8 @@ public struct ContentItem: Codable, Identifiable, Hashable {
 }
 
 public struct ContentFeed: Codable {
-    public let available: Bool
-    public let items: [ContentItem]
+    public var available: Bool
+    public var items: [ContentItem]
 
     public init(available: Bool = false, items: [ContentItem] = []) {
         self.available = available
@@ -388,8 +388,8 @@ public struct ContentFeed: Codable {
 }
 
 public struct DashboardContent: Codable {
-    public let announcements: ContentFeed
-    public let digest: ContentFeed
+    public var announcements: ContentFeed
+    public var digest: ContentFeed
 
     public init(announcements: ContentFeed = ContentFeed(), digest: ContentFeed = ContentFeed()) {
         self.announcements = announcements
@@ -1279,6 +1279,24 @@ public struct ThirukkuralRepository {
         let index = ((combined % kurals.count) + kurals.count) % kurals.count
         return kurals[index]
     }
+
+    public static func formatShareText(_ kural: Thirukkural) -> String {
+        return """
+        🌟 *தினசரி திருக்குறள் (Daily Thirukkural)* 🌟
+        குறள் எண்: \(kural.number) | பால்: \(kural.section) | அதிகாரம்: \(kural.chapter)
+
+        \(kural.line1)
+        \(kural.line2)
+
+        📖 *மு. வரதராசனார் உரை:*
+        \(kural.explanationTamil)
+
+        🌐 *English Meaning:*
+        \(kural.explanationEnglish)
+
+        — TECHNOCOP APP
+        """
+    }
 }
 
 // MARK: - Daily Motivational Quotes (Source: Android MotivationalQuotes.kt)
@@ -1367,6 +1385,19 @@ public struct MotivationalQuotesRepository {
         let combined = dayOfYear + (year - 2026) * 365 + offsetDays
         let index = ((combined % quotes.count) + quotes.count) % quotes.count
         return quotes[index]
+    }
+
+    public static func formatShareText(_ quote: MotivationalQuote) -> String {
+        return """
+        💡 *Daily Motivation - TECHNOCOP*
+
+        "\(quote.quote)"
+
+        — *\(quote.author)*
+        _\(quote.designationOrField)_
+
+        — TECHNOCOP APP
+        """
     }
 }
 

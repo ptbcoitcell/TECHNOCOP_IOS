@@ -221,6 +221,42 @@ public struct APIClient {
         return j["ok"] as? Bool ?? true
     }
 
+    public func deleteAnnouncement(
+        token: String,
+        title: String,
+        date: String = "",
+        priority: String = ""
+    ) async throws -> Bool {
+        let j = try await post("deleteAnnouncement", [
+            "token": token,
+            "title": title,
+            "date": date,
+            "priority": priority
+        ])
+        return j["ok"] as? Bool ?? true
+    }
+
+    public func updateAnnouncement(
+        token: String,
+        originalTitle: String,
+        title: String,
+        message: String,
+        priority: String,
+        targetGroup: String,
+        url: String = ""
+    ) async throws -> Bool {
+        let j = try await post("updateAnnouncement", [
+            "token": token,
+            "originalTitle": originalTitle,
+            "title": title,
+            "message": message,
+            "priority": priority,
+            "targetGroup": targetGroup,
+            "url": url
+        ])
+        return j["ok"] as? Bool ?? true
+    }
+
     public func retirementForecast(token: String = "") async throws -> RetirementForecast {
         let params = token.isEmpty ? [String: String]() : ["token": token]
         let j = try await post("retirementForecast", params)

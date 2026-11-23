@@ -115,6 +115,12 @@ struct MainView: View {
                     onDismiss: { store.activeModal = nil },
                     onPostBroadcast: { title, body, priority, target, url, completion in
                         store.postAnnouncement(title: title, message: body, priority: priority, targetGroup: target, url: url, completion: completion)
+                    },
+                    onUpdateBroadcast: { originalItem, title, body, priority, target, url, completion in
+                        store.updateAnnouncement(originalItem: originalItem, title: title, message: body, priority: priority, targetGroup: target, url: url, completion: completion)
+                    },
+                    onDeleteBroadcast: { item, completion in
+                        store.deleteAnnouncement(item: item, completion: completion)
                     }
                 )
                 .transition(.scale)

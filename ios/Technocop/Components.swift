@@ -733,12 +733,24 @@ public struct DailyThirukkuralCard: View {
                     .foregroundStyle(TechTheme.textSecondary)
 
                 Button {
-                    UIPasteboard.general.string = "\(kural.line1)\n\(kural.line2)\n\n\(kural.explanationTamil)\n\n\(kural.explanationEnglish)"
+                    UIPasteboard.general.string = ThirukkuralRepository.formatShareText(kural)
                     showCopiedAlert = true
                 } label: {
                     Image(systemName: "doc.on.doc")
                         .font(.system(size: 13))
                         .foregroundStyle(TechTheme.textSecondary)
+                }
+
+                Button {
+                    let text = ThirukkuralRepository.formatShareText(kural)
+                    if let encoded = text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+                       let url = URL(string: "https://wa.me/?text=\(encoded)") {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 13))
+                        .foregroundStyle(TechTheme.navy)
                 }
             }
 
@@ -797,6 +809,26 @@ public struct DailyMotivationalQuoteCard: View {
                 Text(quote.category)
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(TechTheme.accentDeep)
+
+                Button {
+                    UIPasteboard.general.string = MotivationalQuotesRepository.formatShareText(quote)
+                } label: {
+                    Image(systemName: "doc.on.doc")
+                        .font(.system(size: 13))
+                        .foregroundStyle(TechTheme.textSecondary)
+                }
+
+                Button {
+                    let text = MotivationalQuotesRepository.formatShareText(quote)
+                    if let encoded = text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+                       let url = URL(string: "https://wa.me/?text=\(encoded)") {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 13))
+                        .foregroundStyle(TechTheme.navy)
+                }
             }
 
             Text("\"\(quote.quote)\"")
