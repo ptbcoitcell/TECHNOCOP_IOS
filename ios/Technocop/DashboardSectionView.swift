@@ -1,179 +1,208 @@
 import SwiftUI
 
-struct DashboardSectionView: View {
+// MARK: - Modern Dashboard View (Matching Android ModernDashboard)
+
+public struct DashboardSectionView: View {
     @EnvironmentObject private var store: AppStore
-    
-    @State private var batchStrengthExpanded = false
-    @State private var ptbStrengthExpanded = false
-    @State private var citySectionExpanded = false
-    @State private var zoneSectionExpanded = false
-    @State private var rangeSectionExpanded = false
-    @State private var specialStrengthExpanded = false
-    @State private var ministerialExpanded = false
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // Last refreshed timestamp & quiet offline banner
+    public init() {}
+
+    public var body: some View {
+        VStack(spacing: 12) {
+            // 1. Sync & Error Status Banner
             if let lastRefreshed = store.lastRefreshedAt {
-                Text("Last refreshed \(formatRefreshTime(lastRefreshed))")
-                    .font(.system(size: 11))
-                    .foregroundStyle(TechTheme.textSubtitle)
-            }
-
-            if !store.offlineMessage.isEmpty {
-                Text(store.offlineMessage)
-                    .font(.system(size: 12))
-                    .foregroundStyle(TechTheme.textError)
-                    .padding(.bottom, 2)
-            }
-
-            // 1. Batch-wise Strength
-            ExpandableSection(title: "Batch-wise Strength", isExpanded: $batchStrengthExpanded, contentHorizontalPadding: 0) {
-                BatchStrengthTableView(contacts: store.contacts)
-            }
-
-            // 2. PTB Hqrs strength
-            ExpandableSection(title: "PTB Hqrs strength", isExpanded: $ptbStrengthExpanded, contentHorizontalPadding: 0) {
-                let ptbUnits = Dictionary(grouping: store.contacts.filter {
-                    $0.unitCategory.trimmingCharacters(in: .whitespacesAndNewlines).caseInsensitiveCompare("PTB Hqrs") == .orderedSame
-                }) { $0.unit.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Unit not specified" : $0.unit.trimmingCharacters(in: .whitespacesAndNewlines) }
-
-                if ptbUnits.isEmpty && store.isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(16)
-                } else if ptbUnits.isEmpty {
-                    Text("No contacts found where Unit_Categ is PTB Hqrs.")
-                        .font(.system(size: 13))
-                        .foregroundStyle(Color.secondary)
-                        .padding(12)
-                } else {
-                    let sortedKeys = ptbUnits.keys.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
-                    let rows = sortedKeys.map { unit in
-                        StrengthTableRowItem(label: unit, strength: rankCounts(for: ptbUnits[unit] ?? []))
-                    }
-                    CompactStrengthTableView(rows: rows, firstColumnTitle: "Unit")
+                SyncStatusBanner(
+                    lastUpdatedText: formatRefreshTime(lastRefreshed),
+                    isRefreshing: store.isLoading,
+                    errorMessage: store.offlineMessage
+                ) {
+                    Task { await store.refreshData() }
                 }
             }
 
-            // 3. City-wise Strength
-            ExpandableSection(title: "City-wise Strength", isExpanded: $citySectionExpanded, contentHorizontalPadding: 0) {
-                let rows = CITY_SUMMARY_LOCATIONS.map { city in
-                    let officers = store.contacts.filter {
-                        normalizedOrgLabel($0.unit) == normalizedOrgLabel(city) && isCityContact($0)
-                    }
-                    return StrengthTableRowItem(label: city, strength: rankCounts(for: officers))
-                }
-                CompactStrengthTableView(rows: rows, firstColumnTitle: "City")
+            // 2. Smart Caller ID Setup Banner
+            SmartCallerIdSetupBanner {
+                store.activeModal = .callerId
             }
 
-            // 4. Zone-wise Strength
-            ExpandableSection(title: "Zone-wise Strength", isExpanded: $zoneSectionExpanded, contentHorizontalPadding: 0) {
-                let rows = ZONE_RANGE_MAP.keys.sorted().map { zone in
-                    let officers = store.contacts.filter {
-                        normalizedOrgLabel($0.zone) == normalizedOrgLabel(zone) &&
-                        !isPtbHqrsContact($0) &&
-                        !isCityContact($0) &&
-                        !isRepeaterContact($0) &&
-                        !isSpecialUnitContact($0)
-                    }
-                    return StrengthTableRowItem(label: zone, strength: rankCounts(for: officers))
-                }
-                CompactStrengthTableView(rows: rows, firstColumnTitle: "Zone")
+            // 3. Hero Greeting Card
+            if let officer = store.session?.officer {
+                let quickStats = computeQuickStats(
+                    officer: officer,
+                    counts: store.dashboardData,
+                    contacts: store.contacts,
+                    birthdayCount: store.birthdayData?.birthdays.count ?? 0,
+                    announcementCount: store.dashboardContent?.announcements.items.count ?? 0,
+                    upcomingRetirementsCount: store.retirementForecast?.years.reduce(0, { $0 + $1.count }) ?? 0
+                )
+
+                HeroGreetingCard(
+                    officer: officer,
+                    quickStats: quickStats,
+                    onProfile: { store.navigateToPage("profile") }
+                )
             }
 
-            // 5. Range-wise Strength
-            ExpandableSection(title: "Range-wise Strength", isExpanded: $rangeSectionExpanded, contentHorizontalPadding: 0) {
-                let districtStrengths = store.dashboardData?.districtStrengths ?? []
-                let rows: [StrengthTableRowItem] = buildRangeRows(districtStrengths: districtStrengths)
-                CompactStrengthTableView(rows: rows, rangeLayout: true, firstColumnTitle: "Zone")
-            }
-
-            // 6. Special Unit Strength
-            ExpandableSection(title: "Special Unit Strength", isExpanded: $specialStrengthExpanded, contentHorizontalPadding: 0) {
-                let specialUnits = Dictionary(grouping: store.contacts.filter {
-                    $0.unitCategory.trimmingCharacters(in: .whitespacesAndNewlines).caseInsensitiveCompare("Special unit") == .orderedSame
-                }) { $0.unit.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Unit not specified" : $0.unit.trimmingCharacters(in: .whitespacesAndNewlines) }
-
-                if specialUnits.isEmpty && store.isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(16)
-                } else if specialUnits.isEmpty {
-                    Text("No contacts found where Unit_Categ is Special unit.")
-                        .font(.system(size: 13))
-                        .foregroundStyle(Color.secondary)
-                        .padding(12)
-                } else {
-                    let sortedKeys = specialUnits.keys.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
-                    let rows = sortedKeys.map { unit in
-                        StrengthTableRowItem(label: unit, strength: rankCounts(for: specialUnits[unit] ?? []))
-                    }
-                    CompactStrengthTableView(rows: rows, firstColumnTitle: "Unit")
+            // 4. Today's Birthday Wishes
+            if let bFeed = store.birthdayData, !bFeed.birthdays.isEmpty {
+                BirthdayWishesCard(birthdayData: bFeed) {
+                    store.openModal(.birthdays)
                 }
             }
 
-            // 7. Ministerial Staff Strength
-            ExpandableSection(title: "Ministerial Staff Strength", isExpanded: $ministerialExpanded, contentHorizontalPadding: 0) {
-                let ministerial = store.contacts.filter(isMinisterialContact)
-                if ministerial.isEmpty && store.isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(16)
-                } else if ministerial.isEmpty {
-                    Text("No contacts found where Unit_Categ identifies Ministerial Staff.")
-                        .font(.system(size: 13))
-                        .foregroundStyle(Color.secondary)
-                        .padding(12)
-                } else {
-                    MinisterialStrengthTableView(contacts: store.contacts)
+            // 5. Daily Thirukkural Card
+            DailyThirukkuralCard()
+
+            // 6. Daily Motivational Quote Card
+            DailyMotivationalQuoteCard()
+
+            // 7. Daily Observance Card (if today has an observance)
+            DailyObservanceCard()
+
+            // 8. Employee Services Quick Access Grid
+            employeeServicesGrid
+
+            // 9. Retirement Forecast Preview Card
+            retirementPreviewCard
+        }
+    }
+
+    // MARK: - Employee Services Grid
+
+    private var employeeServicesGrid: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Employee services")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(TechTheme.navy)
+
+                Spacer()
+
+                if let officer = store.session?.officer, !officer.unit.isEmpty {
+                    Text(officer.unit)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(TechTheme.accentDeep)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(TechTheme.lavenderTint)
+                        .clipShape(Capsule())
+                }
+            }
+
+            let myUnitCount = store.session.map { myUnitContacts(for: $0.officer, in: store.contacts).count } ?? 0
+            let myUnitSub = myUnitCount > 0 ? "\(myUnitCount) colleague\(myUnitCount == 1 ? "" : "s") in unit" : "Your unit contacts"
+            let dirSub = store.contacts.count > 0 ? "\(store.contacts.count) staff contacts" : "Browse staff contacts"
+            let favSub = store.favoriteNumbers.count > 0 ? "\(store.favoriteNumbers.count) saved" : "Quick 1-tap contacts"
+            let orgSub = store.dashboardData.map { "\($0.sps + $0.addlSps + $0.dsps + $0.inspectors + $0.subInspectors) technical officers" } ?? "View organization strength"
+            let upcomingCount = store.retirementForecast?.years.reduce(0, { $0 + $1.count }) ?? 0
+            let retSub = upcomingCount > 0 ? "\(upcomingCount) in forecast" : "Forecast by year"
+
+            let isExecOrMin = isExecutiveOrMinisterialOfficer(store.session?.officer)
+
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                QuickAccessCard(title: "My Unit", subtitle: myUnitSub, systemImage: "building.2.fill") {
+                    store.selectCategory("my_unit")
+                }
+
+                QuickAccessCard(title: "Employee Directory", subtitle: dirSub, systemImage: "person.3.fill") {
+                    store.selectCategory("directory")
+                }
+
+                QuickAccessCard(title: "Favourites", subtitle: favSub, systemImage: "heart.fill") {
+                    store.selectCategory("favourites")
+                }
+
+                QuickAccessCard(title: "Search", subtitle: "Find a colleague", systemImage: "magnifyingglass") {
+                    store.selectCategory("search")
+                }
+
+                QuickAccessCard(title: "My Organization", subtitle: orgSub, systemImage: "building.columns.fill") {
+                    store.selectCategory("organization")
+                }
+
+                QuickAccessCard(title: "Retirement Forecast", subtitle: retSub, systemImage: "calendar.badge.clock") {
+                    store.selectCategory("retirement")
+                }
+
+                if !isExecOrMin {
+                    QuickAccessCard(title: "Tech-Knowledge Base", subtitle: "IT, CCTV & AI Help", systemImage: "book.fill") {
+                        store.selectCategory("knowledge")
+                    }
+
+                    QuickAccessCard(title: "Daily Digest", subtitle: "Bulletins, GOs & Circulars", systemImage: "newspaper.fill") {
+                        store.openModal(.digest)
+                    }
+                }
+
+                QuickAccessCard(title: "Special Days", subtitle: "Observances Calendar", systemImage: "flag.fill") {
+                    store.openModal(.specialDays)
                 }
             }
         }
     }
 
-    private func buildRangeRows(districtStrengths: [DistrictStrength]) -> [StrengthTableRowItem] {
-        var result: [StrengthTableRowItem] = []
-        for (zone, allRanges) in ZONE_RANGE_MAP.sorted(by: { $0.key < $1.key }) {
-            // Zone level
-            let zoneContacts = store.contacts.filter {
-                normalizedOrgLabel($0.zone) == normalizedOrgLabel(zone) &&
-                !isCityContact($0) &&
-                !isPtbHqrsContact($0) &&
-                !isRepeaterContact($0) &&
-                !isSpecialUnitContact($0)
-            }
-            result.append(StrengthTableRowItem(label: zone, strength: rankCounts(for: zoneContacts), depth: 0))
+    // MARK: - Retirement Preview Card
 
-            // Non-city ranges
-            let nonCityRanges = allRanges.filter { !$0.localizedCaseInsensitiveContains("city") }
-            for range in nonCityRanges {
-                let rangeContacts = store.contacts.filter {
-                    normalizedOrgLabel($0.zone) == normalizedOrgLabel(zone) &&
-                    normalizedOrgLabel($0.range) == normalizedOrgLabel(range) &&
-                    !isCityContact($0) &&
-                    !isPtbHqrsContact($0) &&
-                    !isRepeaterContact($0) &&
-                    !isSpecialUnitContact($0)
-                }
-                result.append(StrengthTableRowItem(label: range, strength: rankCounts(for: rangeContacts), depth: 1))
+    private var retirementPreviewCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Retirement Forecast")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(TechTheme.navy)
 
-                // Districts under this range
-                let districts = districtStrengths.filter {
-                    normalizedOrgLabel($0.zone) == normalizedOrgLabel(zone) &&
-                    normalizedOrgLabel($0.range) == normalizedOrgLabel(range)
-                }.sorted { $0.district.localizedCaseInsensitiveCompare($1.district) == .orderedAscending }
+                Spacer()
 
-                for d in districts {
-                    result.append(StrengthTableRowItem(
-                        label: d.district,
-                        strength: RankStrength(dsp: 0, inspector: d.inspectors, si: d.si),
-                        depth: 2
-                    ))
+                let total = store.retirementForecast?.years.reduce(0, { $0 + $1.count }) ?? 0
+                if total > 0 {
+                    Text("\(total) upcoming")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(TechTheme.accentDeep)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(TechTheme.lavenderTint)
+                        .clipShape(Capsule())
                 }
             }
+
+            Button {
+                store.selectCategory("retirement")
+            } label: {
+                HStack(spacing: 12) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(TechTheme.lavenderTint)
+                            .frame(width: 40, height: 40)
+                        Image(systemName: "calendar")
+                            .font(.system(size: 18))
+                            .foregroundStyle(TechTheme.navy)
+                    }
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Count by year")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(TechTheme.navy)
+                        Text("View retiring officers projection sorted by batch, DOR and rank")
+                            .font(.system(size: 11.5))
+                            .foregroundStyle(TechTheme.textSecondary)
+                            .lineLimit(1)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(TechTheme.textSecondary)
+                }
+                .padding(12)
+                .background(TechTheme.surface)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(TechTheme.tableBorder, lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
         }
-        return result
     }
 
     private func formatRefreshTime(_ date: Date) -> String {
@@ -182,4 +211,3 @@ struct DashboardSectionView: View {
         return formatter.string(from: date)
     }
 }
-

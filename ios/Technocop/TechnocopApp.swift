@@ -3,12 +3,14 @@ import SwiftUI
 @main
 struct TechnocopApp: App {
     @StateObject private var store = AppStore()
+    @StateObject private var themeManager = TechThemeManager()
 
     var body: some Scene {
         WindowGroup {
             RootContentView()
                 .environmentObject(store)
-                .tint(TechTheme.navy)
+                .environmentObject(themeManager)
+                .preferredColorScheme(themeManager.preferredColorScheme)
                 .task {
                     await store.restoreSession()
                 }
@@ -25,14 +27,30 @@ final class AppStore: ObservableObject {
     @Published var units: [String] = []
     @Published var unitCategories: [String] = []
     @Published var dashboardData: DashboardCounts?
+    @Published var birthdayData: BirthdayFeed?
+    @Published var dashboardContent: DashboardContent?
+    @Published var retirementForecast: RetirementForecast?
+    @Published var favoriteNumbers: Set<String> = []
     @Published var lastRefreshedAt: Date?
 
+    @Published var page: String = "home"
+    @Published var dashboardCategory: String? = nil
+    @Published var activeModal: DashboardModalType? = nil
+
     @Published var isLoading = false
+    @Published var isRefreshing = false
     @Published var isRestoring = true
     @Published var errorMessage = ""
     @Published var offlineMessage = ""
+    @Published var dashboardError = ""
+    @Published var contactsError = ""
+
+    // Dialog & Popup triggers matching Android
+    @Published var showBirthdayGreetings = false
+    @Published var broadcastPopupAnnouncement: Announcement? = nil
+    @Published var autoUpdateAvailable: AppUpdate? = nil
     @Published var isCheckingUpdate = false
-    @Published var appUpdateInfo: AppUpdate?
+    @Published var appUpdateInfo: AppUpdate? = nil
 
     private let api = APIClient()
     private let keychain = SessionKeychain()
@@ -45,7 +63,7 @@ final class AppStore: ObservableObject {
         isRestoring = true
         defer { isRestoring = false }
 
-        // 1. Immediately populate from local secure cache if available
+        // 1. Immediately load local secure caches
         if let cachedSession = await cache.loadSession() {
             session = cachedSession
         }
@@ -59,6 +77,16 @@ final class AppStore: ObservableObject {
             unitCategories = cachedContacts.value.unitCategories
             lastRefreshedAt = cachedContacts.savedAt
         }
+        if let cachedBirthdays = await cache.loadBirthdays() {
+            birthdayData = cachedBirthdays.value
+        }
+        if let cachedContent = await cache.loadContent() {
+            dashboardContent = cachedContent.value
+        }
+        if let cachedRetirement = await cache.loadRetirement() {
+            retirementForecast = cachedRetirement.value
+        }
+        favoriteNumbers = await cache.loadFavorites()
 
         // 2. Check Keychain token
         guard let savedRememberToken = keychain.read(), !savedRememberToken.isEmpty else {
@@ -81,7 +109,6 @@ final class AppStore: ObservableObject {
                 session = nil
                 errorMessage = "Sign in again to reconnect your account."
             } else if session != nil {
-                // If offline but we have cached session, remain logged in
                 offlineMessage = "Network unavailable. Showing saved data."
             }
         }
@@ -128,9 +155,15 @@ final class AppStore: ObservableObject {
         units = []
         unitCategories = []
         dashboardData = nil
+        birthdayData = nil
+        dashboardContent = nil
+        retirementForecast = nil
         lastRefreshedAt = nil
         offlineMessage = ""
         errorMessage = ""
+        page = "home"
+        dashboardCategory = nil
+        activeModal = nil
 
         keychain.clear()
         await cache.clearSession()
@@ -140,32 +173,70 @@ final class AppStore: ObservableObject {
         }
     }
 
-    // MARK: - Data Refresh & Polling
+    // MARK: - Refresh Data
 
     func refreshData() async {
         guard let currentSession = session else { return }
+        isRefreshing = true
         offlineMessage = ""
+        dashboardError = ""
+        contactsError = ""
+        defer { isRefreshing = false }
+
+        let userMobile = currentSession.officer.mobile
 
         async let fetchDashboard = api.dashboard(token: currentSession.token)
         async let fetchContacts = api.contacts()
+        async let fetchBirthdays = api.birthdays(token: currentSession.token, mobile: userMobile)
+        async let fetchContent = api.dashboardContent(token: currentSession.token)
+        async let fetchRetirement = api.retirementForecast(token: currentSession.token)
 
         do {
             let dash = try await fetchDashboard
-            let dir = try await fetchContacts
             dashboardData = dash
+            await cache.saveDashboard(dash)
+        } catch {
+            dashboardError = "Dashboard details unavailable."
+        }
+
+        do {
+            let dir = try await fetchContacts
             contacts = dir.contacts
             units = dir.units
             unitCategories = dir.unitCategories
-            let now = Date()
-            lastRefreshedAt = now
-
-            await cache.saveDashboard(dash)
             await cache.saveContacts(dir)
         } catch {
-            if isOfflineError(error) {
-                offlineMessage = "Showing saved data."
+            contactsError = "Contacts directory unavailable."
+        }
+
+        do {
+            let bdays = try await fetchBirthdays
+            birthdayData = bdays
+            await cache.saveBirthdays(bdays)
+            evaluateBirthdayPopup(bdays)
+        } catch { }
+
+        do {
+            let cont = try await fetchContent
+            dashboardContent = cont
+            await cache.saveContent(cont)
+            evaluateBroadcastPopup(cont)
+        } catch { }
+
+        do {
+            let ret = try await fetchRetirement
+            let enriched = enrichRetirementForecast(forecast: ret, contacts: contacts)
+            retirementForecast = enriched
+            await cache.saveRetirement(enriched)
+        } catch {
+            if !contacts.isEmpty {
+                let computed = computeRetirementForecastFromContacts(contacts)
+                retirementForecast = computed
+                await cache.saveRetirement(computed)
             }
         }
+
+        lastRefreshedAt = Date()
     }
 
     private func startPeriodicRefresh() {
@@ -176,6 +247,58 @@ final class AppStore: ObservableObject {
                 guard let self else { break }
                 await self.refreshData()
             }
+        }
+    }
+
+    // MARK: - Popups & Dialogs Evaluation
+
+    private func evaluateBirthdayPopup(_ feed: BirthdayFeed) {
+        guard !feed.birthdays.isEmpty else { return }
+        let todayStr = DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .none)
+        let lastShown = UserDefaults.standard.string(forKey: "last_birthday_popup_date")
+        if lastShown != todayStr {
+            showBirthdayGreetings = true
+            UserDefaults.standard.set(todayStr, forKey: "last_birthday_popup_date")
+        }
+    }
+
+    private func evaluateBroadcastPopup(_ content: DashboardContent) {
+        guard let officer = session?.officer else { return }
+        let announcements = content.announcements.items
+        for ann in announcements {
+            let isUrgent = ann.priority.localizedCaseInsensitiveContains("URGENT") || ann.priority.localizedCaseInsensitiveContains("HIGH")
+            if isUrgent && matchesBroadcastAudience(ann.targetGroup, officer) {
+                let seenKey = "seen_broadcast_\(ann.id)"
+                if !UserDefaults.standard.bool(forKey: seenKey) {
+                    broadcastPopupAnnouncement = ann
+                    UserDefaults.standard.set(true, forKey: seenKey)
+                    break
+                }
+            }
+        }
+    }
+
+    func dismissBirthdayPopup() {
+        showBirthdayGreetings = false
+    }
+
+    func dismissBroadcastPopup() {
+        broadcastPopupAnnouncement = nil
+    }
+
+    // MARK: - Favorites
+
+    func toggleFavorite(_ contact: Contact) {
+        let clean = contact.mobile.filter { $0.isNumber }
+        let key = String(clean.suffix(10))
+        guard !key.isEmpty else { return }
+        if favoriteNumbers.contains(key) {
+            favoriteNumbers.remove(key)
+        } else {
+            favoriteNumbers.insert(key)
+        }
+        Task {
+            await cache.saveFavorites(favoriteNumbers)
         }
     }
 
@@ -203,9 +326,27 @@ final class AppStore: ObservableObject {
         defer { isCheckingUpdate = false }
 
         do {
-            appUpdateInfo = try await api.appUpdate()
+            appUpdateInfo = try await api.latestRelease()
         } catch {
             appUpdateInfo = nil
+        }
+    }
+
+    // MARK: - Post Announcement
+
+    func postAnnouncement(title: String, message: String, priority: String, targetGroup: String, url: String, completion: @escaping () -> Void) {
+        guard let cur = session else { return }
+        Task {
+            _ = try? await api.createAnnouncement(
+                token: cur.token,
+                title: title,
+                message: message,
+                priority: priority,
+                targetGroup: targetGroup,
+                url: url
+            )
+            await refreshData()
+            completion()
         }
     }
 }
@@ -214,14 +355,22 @@ final class AppStore: ObservableObject {
 
 struct RootContentView: View {
     @EnvironmentObject private var store: AppStore
+    @EnvironmentObject private var themeManager: TechThemeManager
 
     var body: some View {
         Group {
             if store.isRestoring {
                 ZStack {
-                    TechTheme.navy.ignoresSafeArea()
-                    ProgressView()
-                        .tint(Color.white)
+                    themeManager.primaryColor.ignoresSafeArea()
+                    VStack(spacing: 12) {
+                        Image("TechnocopLogo")
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 80, height: 80)
+                            .clipShape(Circle())
+                        ProgressView()
+                            .tint(Color.white)
+                    }
                 }
             } else if store.session == nil {
                 LoginView()

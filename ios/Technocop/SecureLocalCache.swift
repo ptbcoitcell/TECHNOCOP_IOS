@@ -1,12 +1,17 @@
 import Foundation
 
-struct CachedItem<T: Codable>: Codable {
-    let value: T
-    let savedAt: Date
+public struct CachedItem<T: Codable>: Codable {
+    public let value: T
+    public let savedAt: Date
+
+    public init(value: T, savedAt: Date = Date()) {
+        self.value = value
+        self.savedAt = savedAt
+    }
 }
 
-actor SecureLocalCache {
-    static let shared = SecureLocalCache()
+public actor SecureLocalCache {
+    public static let shared = SecureLocalCache()
     private let fileManager = FileManager.default
 
     private var cacheDirectory: URL {
@@ -22,39 +27,82 @@ actor SecureLocalCache {
 
     // MARK: - Remembered Login Session
 
-    func saveSession(_ session: UserSession) {
+    public func saveSession(_ session: UserSession) {
         let item = CachedItem(value: session, savedAt: Date())
         write(item, to: "session.cache")
     }
 
-    func loadSession() -> UserSession? {
+    public func loadSession() -> UserSession? {
         read(CachedItem<UserSession>.self, from: "session.cache")?.value
     }
 
-    func clearSession() {
+    public func clearSession() {
         delete("session.cache")
     }
 
     // MARK: - Dashboard Counts
 
-    func saveDashboard(_ counts: DashboardCounts) {
+    public func saveDashboard(_ counts: DashboardCounts) {
         let item = CachedItem(value: counts, savedAt: Date())
         write(item, to: "dashboard.cache")
     }
 
-    func loadDashboard() -> CachedItem<DashboardCounts>? {
+    public func loadDashboard() -> CachedItem<DashboardCounts>? {
         read(CachedItem<DashboardCounts>.self, from: "dashboard.cache")
     }
 
     // MARK: - Contacts Directory
 
-    func saveContacts(_ directory: ContactDirectory) {
+    public func saveContacts(_ directory: ContactDirectory) {
         let item = CachedItem(value: directory, savedAt: Date())
         write(item, to: "contacts.cache")
     }
 
-    func loadContacts() -> CachedItem<ContactDirectory>? {
+    public func loadContacts() -> CachedItem<ContactDirectory>? {
         read(CachedItem<ContactDirectory>.self, from: "contacts.cache")
+    }
+
+    // MARK: - Birthdays Cache
+
+    public func saveBirthdays(_ feed: BirthdayFeed) {
+        let item = CachedItem(value: feed, savedAt: Date())
+        write(item, to: "birthdays.cache")
+    }
+
+    public func loadBirthdays() -> CachedItem<BirthdayFeed>? {
+        read(CachedItem<BirthdayFeed>.self, from: "birthdays.cache")
+    }
+
+    // MARK: - Dashboard Content (Announcements & Digest)
+
+    public func saveDashboardContent(_ content: DashboardContent) {
+        let item = CachedItem(value: content, savedAt: Date())
+        write(item, to: "content.cache")
+    }
+
+    public func loadDashboardContent() -> CachedItem<DashboardContent>? {
+        read(CachedItem<DashboardContent>.self, from: "content.cache")
+    }
+
+    // MARK: - Retirement Forecast
+
+    public func saveRetirementForecast(_ forecast: RetirementForecast) {
+        let item = CachedItem(value: forecast, savedAt: Date())
+        write(item, to: "retirement.cache")
+    }
+
+    public func loadRetirementForecast() -> CachedItem<RetirementForecast>? {
+        read(CachedItem<RetirementForecast>.self, from: "retirement.cache")
+    }
+
+    // MARK: - Favourite Officer Mobiles
+
+    public func saveFavorites(_ mobiles: [String]) {
+        write(mobiles, to: "favorites.cache")
+    }
+
+    public func loadFavorites() -> [String]? {
+        read([String].self, from: "favorites.cache")
     }
 
     // MARK: - Generic Secure File Helpers
@@ -85,4 +133,3 @@ actor SecureLocalCache {
         try? fileManager.removeItem(at: fileURL)
     }
 }
-

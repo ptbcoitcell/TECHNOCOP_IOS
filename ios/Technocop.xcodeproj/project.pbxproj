@@ -21,6 +21,15 @@
 		A10000000000000000000013 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* ProfileView.swift */; };
 		A10000000000000000000014 /* SideMenuDrawerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000014 /* SideMenuDrawerView.swift */; };
 		A10000000000000000000015 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000015 /* Assets.xcassets */; };
+		A10000000000000000000018 /* OrganizationSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000018 /* OrganizationSectionView.swift */; };
+		A10000000000000000000019 /* MyUnitSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000019 /* MyUnitSectionView.swift */; };
+		A10000000000000000000020 /* FavouritesSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000020 /* FavouritesSectionView.swift */; };
+		A10000000000000000000021 /* KnowledgeBaseData.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000021 /* KnowledgeBaseData.swift */; };
+		A10000000000000000000022 /* KnowledgeCentreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000022 /* KnowledgeCentreView.swift */; };
+		A10000000000000000000023 /* RetirementSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000023 /* RetirementSectionView.swift */; };
+		A10000000000000000000024 /* ThemeAndAppearanceDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000024 /* ThemeAndAppearanceDialog.swift */; };
+		A10000000000000000000025 /* SmartCallerIdView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000025 /* SmartCallerIdView.swift */; };
+		A10000000000000000000026 /* ModalsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000026 /* ModalsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +50,15 @@
 		B10000000000000000000015 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B10000000000000000000016 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B10000000000000000000017 /* Technocop.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Technocop.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000018 /* OrganizationSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizationSectionView.swift; sourceTree = "<group>"; };
+		B10000000000000000000019 /* MyUnitSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyUnitSectionView.swift; sourceTree = "<group>"; };
+		B10000000000000000000020 /* FavouritesSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavouritesSectionView.swift; sourceTree = "<group>"; };
+		B10000000000000000000021 /* KnowledgeBaseData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeBaseData.swift; sourceTree = "<group>"; };
+		B10000000000000000000022 /* KnowledgeCentreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeCentreView.swift; sourceTree = "<group>"; };
+		B10000000000000000000023 /* RetirementSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetirementSectionView.swift; sourceTree = "<group>"; };
+		B10000000000000000000024 /* ThemeAndAppearanceDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeAndAppearanceDialog.swift; sourceTree = "<group>"; };
+		B10000000000000000000025 /* SmartCallerIdView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartCallerIdView.swift; sourceTree = "<group>"; };
+		B10000000000000000000026 /* ModalsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,6 +82,15 @@
 			B10000000000000000000012 /* SearchSectionView.swift */,
 			B10000000000000000000013 /* ProfileView.swift */,
 			B10000000000000000000014 /* SideMenuDrawerView.swift */,
+			B10000000000000000000018 /* OrganizationSectionView.swift */,
+			B10000000000000000000019 /* MyUnitSectionView.swift */,
+			B10000000000000000000020 /* FavouritesSectionView.swift */,
+			B10000000000000000000021 /* KnowledgeBaseData.swift */,
+			B10000000000000000000022 /* KnowledgeCentreView.swift */,
+			B10000000000000000000023 /* RetirementSectionView.swift */,
+			B10000000000000000000024 /* ThemeAndAppearanceDialog.swift */,
+			B10000000000000000000025 /* SmartCallerIdView.swift */,
+			B10000000000000000000026 /* ModalsView.swift */,
 			B10000000000000000000015 /* Assets.xcassets */,
 			B10000000000000000000016 /* Info.plist */,
 		); };
@@ -100,6 +127,15 @@
 			A10000000000000000000012 /* SearchSectionView.swift in Sources */,
 			A10000000000000000000013 /* ProfileView.swift in Sources */,
 			A10000000000000000000014 /* SideMenuDrawerView.swift in Sources */,
+			A10000000000000000000018 /* OrganizationSectionView.swift in Sources */,
+			A10000000000000000000019 /* MyUnitSectionView.swift in Sources */,
+			A10000000000000000000020 /* FavouritesSectionView.swift in Sources */,
+			A10000000000000000000021 /* KnowledgeBaseData.swift in Sources */,
+			A10000000000000000000022 /* KnowledgeCentreView.swift in Sources */,
+			A10000000000000000000023 /* RetirementSectionView.swift in Sources */,
+			A10000000000000000000024 /* ThemeAndAppearanceDialog.swift in Sources */,
+			A10000000000000000000025 /* SmartCallerIdView.swift in Sources */,
+			A10000000000000000000026 /* ModalsView.swift in Sources */,
 		); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 

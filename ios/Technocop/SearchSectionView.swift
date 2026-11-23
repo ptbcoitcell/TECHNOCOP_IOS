@@ -1,6 +1,8 @@
 import SwiftUI
 
-struct SearchSectionView: View {
+// MARK: - Search Section View (Matching Android SearchSection)
+
+public struct SearchSectionView: View {
     @EnvironmentObject private var store: AppStore
 
     @State private var selectedUnit: String = "All units"
@@ -8,6 +10,8 @@ struct SearchSectionView: View {
     @State private var queryInput: String = ""
     @State private var debouncedQuery: String = ""
     @State private var debounceTask: Task<Void, Never>? = nil
+
+    public init() {}
 
     private var availableUnits: [String] {
         var list = ["All units"]
@@ -22,33 +26,15 @@ struct SearchSectionView: View {
     }
 
     private var filteredContacts: [Contact] {
-        let q = debouncedQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-        let mobileQuery = q.filter { $0.isNumber }
-
-        return store.contacts.filter { officer in
-            let matchesUnit = (selectedUnit == "All units" ||
-                               officer.unit.caseInsensitiveCompare(selectedUnit) == .orderedSame)
-            let matchesCategory = (selectedCategory == "All categories" ||
-                                   officer.unitCategory.caseInsensitiveCompare(selectedCategory) == .orderedSame)
-            let matchesQuery = q.isEmpty ||
-                officer.name.localizedCaseInsensitiveContains(q) ||
-                officer.rank.localizedCaseInsensitiveContains(q) ||
-                officer.unit.localizedCaseInsensitiveContains(q) ||
-                (!mobileQuery.isEmpty && officer.mobile.contains(mobileQuery))
-
-            return matchesUnit && matchesCategory && matchesQuery
-        }.sorted { a, b in
-            let batchA = Int(a.batch.filter { $0.isNumber }) ?? Int.max
-            let batchB = Int(b.batch.filter { $0.isNumber }) ?? Int.max
-            if batchA != batchB { return batchA < batchB }
-            let rankA = rankOrder(a.rank)
-            let rankB = rankOrder(b.rank)
-            if rankA != rankB { return rankA < rankB }
-            return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
-        }
+        filterSearchContacts(
+            contacts: store.contacts,
+            unit: selectedUnit,
+            unitCategory: selectedCategory,
+            query: debouncedQuery
+        )
     }
 
-    var body: some View {
+    public var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Filter & Search Controls Card
             VStack(spacing: 8) {
@@ -84,7 +70,7 @@ struct SearchSectionView: View {
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 7)
-                        .background(Color.white)
+                        .background(TechTheme.surface)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .overlay(
                             RoundedRectangle(cornerRadius: 8)
@@ -125,7 +111,7 @@ struct SearchSectionView: View {
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 7)
-                        .background(Color.white)
+                        .background(TechTheme.surface)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .overlay(
                             RoundedRectangle(cornerRadius: 8)
@@ -166,7 +152,7 @@ struct SearchSectionView: View {
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
-                .background(Color.white)
+                .background(TechTheme.surface)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
@@ -188,11 +174,17 @@ struct SearchSectionView: View {
             } else {
                 VStack(spacing: 3) {
                     ForEach(results.indices, id: \.self) { idx in
-                        ContactRowView(contact: results[idx], isDarker: idx % 2 == 1)
+                        let c = results[idx]
+                        let digits = String(c.mobile.filter { $0.isNumber }.suffix(10))
+                        ContactRowView(
+                            contact: c,
+                            isDarker: idx % 2 == 1,
+                            isFavorite: store.favoriteNumbers.contains(digits),
+                            onToggleFavorite: { store.toggleFavorite(digits) }
+                        )
                     }
                 }
             }
         }
     }
 }
-

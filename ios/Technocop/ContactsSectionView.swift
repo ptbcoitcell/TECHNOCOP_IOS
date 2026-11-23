@@ -1,10 +1,14 @@
 import SwiftUI
 
-struct ContactsSectionView: View {
+// MARK: - Employee Directory View (Matching Android DirectorySection)
+
+public struct ContactsSectionView: View {
     @EnvironmentObject private var store: AppStore
 
     // Sub-section expansion states
+    @State private var favouritesExpanded = true
     @State private var technicalExpanded = false
+    @State private var executiveExpanded = false
     @State private var ptbOpen = false
     @State private var districtsOpen = false
     @State private var citiesOpen = false
@@ -15,6 +19,7 @@ struct ContactsSectionView: View {
 
     // Selection states for drilling down
     @State private var expandedRank: String? = nil
+    @State private var selectedExecutiveUnit: String? = nil
     @State private var selectedPtbUnit: String? = nil
     @State private var selectedDistrictZone: String? = nil
     @State private var selectedDistrictRange: String? = nil
@@ -25,10 +30,36 @@ struct ContactsSectionView: View {
     @State private var selectedSpecialUnit: String? = nil
     @State private var selectedMinisterialUnit: String? = nil
 
-    var body: some View {
+    public init() {}
+
+    public var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             let roster = store.contacts
             let counts = store.dashboardData
+
+            // 0. Favourite Contacts (if any saved)
+            let favs = roster.filter { c in
+                let digits = c.mobile.filter { $0.isNumber }
+                let last10 = String(digits.suffix(10))
+                return !last10.isEmpty && store.favoriteNumbers.contains(last10)
+            }
+
+            if !favs.isEmpty {
+                ExpandableSection(title: "Favourite Contacts (\(favs.count))", isExpanded: $favouritesExpanded) {
+                    VStack(spacing: 3) {
+                        ForEach(favs.indices, id: \.self) { idx in
+                            let contact = favs[idx]
+                            let digits = String(contact.mobile.filter { $0.isNumber }.suffix(10))
+                            ContactRowView(
+                                contact: contact,
+                                isDarker: idx % 2 == 1,
+                                isFavorite: true,
+                                onToggleFavorite: { store.toggleFavorite(digits) }
+                            )
+                        }
+                    }
+                }
+            }
 
             // 1. Technical Officers
             ExpandableSection(title: "Technical Officers", isExpanded: $technicalExpanded) {
@@ -80,19 +111,37 @@ struct ContactsSectionView: View {
                 }
             }
 
-            // 2. PTB Hqrs
+            // 2. Executive Officers
+            let execContacts = roster.filter(isExecutiveContact)
+            if !execContacts.isEmpty {
+                ExpandableSection(title: "Executive Officers", isExpanded: $executiveExpanded) {
+                    ContactUnitGroupsView(
+                        contacts: execContacts,
+                        selected: selectedExecutiveUnit,
+                        depth: 1,
+                        favoriteNumbers: store.favoriteNumbers,
+                        onToggleFavorite: { store.toggleFavorite($0) }
+                    ) { unit in
+                        selectedExecutiveUnit = (selectedExecutiveUnit == unit) ? nil : unit
+                    }
+                }
+            }
+
+            // 3. PTB Hqrs
             ExpandableSection(title: "PTB Hqrs", isExpanded: $ptbOpen) {
                 let ptbContacts = roster.filter(isPtbHqrsContact)
                 ContactUnitGroupsView(
                     contacts: ptbContacts,
                     selected: selectedPtbUnit,
-                    depth: 1
+                    depth: 1,
+                    favoriteNumbers: store.favoriteNumbers,
+                    onToggleFavorite: { store.toggleFavorite($0) }
                 ) { unit in
                     selectedPtbUnit = (selectedPtbUnit == unit) ? nil : unit
                 }
             }
 
-            // 3. Districts (Zone -> Range -> Unit)
+            // 4. Districts (Zone -> Range -> Unit)
             ExpandableSection(title: "Districts", isExpanded: $districtsOpen) {
                 let districtContacts = roster.filter(isDistrictContact)
                 let zoneNames = Array(Set(Array(ZONE_RANGE_MAP.keys) + districtContacts.map(\.zone)))
@@ -137,7 +186,9 @@ struct ContactsSectionView: View {
                                         contacts: rangeUnits,
                                         selected: selectedDistrictUnit,
                                         depth: 2,
-                                        primaryUnit: range
+                                        primaryUnit: range,
+                                        favoriteNumbers: store.favoriteNumbers,
+                                        onToggleFavorite: { store.toggleFavorite($0) }
                                     ) { unit in
                                         selectedDistrictUnit = (selectedDistrictUnit == unit) ? nil : unit
                                     }
@@ -148,55 +199,63 @@ struct ContactsSectionView: View {
                 }
             }
 
-            // 4. Cities
+            // 5. Cities
             ExpandableSection(title: "Cities", isExpanded: $citiesOpen) {
                 let cityContacts = roster.filter(isCityContact)
                 ContactUnitGroupsView(
                     contacts: cityContacts,
                     selected: selectedCityUnit,
-                    depth: 1
+                    depth: 1,
+                    favoriteNumbers: store.favoriteNumbers,
+                    onToggleFavorite: { store.toggleFavorite($0) }
                 ) { unit in
                     selectedCityUnit = (selectedCityUnit == unit) ? nil : unit
                 }
             }
 
-            // 5. Battalion
+            // 6. Battalion
             ExpandableSection(title: "Battalion", isExpanded: $battalionOpen) {
                 let battalionContacts = roster.filter(isBattalionContact)
                 ContactUnitGroupsView(
                     contacts: battalionContacts,
                     selected: selectedBattalionUnit,
-                    depth: 1
+                    depth: 1,
+                    favoriteNumbers: store.favoriteNumbers,
+                    onToggleFavorite: { store.toggleFavorite($0) }
                 ) { unit in
                     selectedBattalionUnit = (selectedBattalionUnit == unit) ? nil : unit
                 }
             }
 
-            // 6. Repeaters
+            // 7. Repeaters
             ExpandableSection(title: "Repeaters", isExpanded: $repeatersOpen) {
                 let repeaterContacts = roster.filter(isRepeaterContact)
                 ContactUnitGroupsView(
                     contacts: repeaterContacts,
                     selected: selectedRepeaterUnit,
-                    depth: 1
+                    depth: 1,
+                    favoriteNumbers: store.favoriteNumbers,
+                    onToggleFavorite: { store.toggleFavorite($0) }
                 ) { unit in
                     selectedRepeaterUnit = (selectedRepeaterUnit == unit) ? nil : unit
                 }
             }
 
-            // 7. Special units
+            // 8. Special units
             ExpandableSection(title: "Special units", isExpanded: $specialOpen) {
                 let specialContacts = roster.filter(isSpecialDirectoryContact)
                 ContactUnitGroupsView(
                     contacts: specialContacts,
                     selected: selectedSpecialUnit,
-                    depth: 1
+                    depth: 1,
+                    favoriteNumbers: store.favoriteNumbers,
+                    onToggleFavorite: { store.toggleFavorite($0) }
                 ) { unit in
                     selectedSpecialUnit = (selectedSpecialUnit == unit) ? nil : unit
                 }
             }
 
-            // 8. Ministerial Staff
+            // 9. Ministerial Staff
             ExpandableSection(title: "Ministerial Staff", isExpanded: $ministerialOpen) {
                 let ministerialContacts = roster.filter(isMinisterialContact)
                 ContactUnitGroupsView(
@@ -204,7 +263,9 @@ struct ContactsSectionView: View {
                     selected: selectedMinisterialUnit,
                     depth: 1,
                     prioritizedUnits: ["CC to DIG Camp", "CC to IGP Camp", "AO Accounts", "AO Admin", "A-Section"],
-                    ministerialOrder: true
+                    ministerialOrder: true,
+                    favoriteNumbers: store.favoriteNumbers,
+                    onToggleFavorite: { store.toggleFavorite($0) }
                 ) { unit in
                     selectedMinisterialUnit = (selectedMinisterialUnit == unit) ? nil : unit
                 }
@@ -215,29 +276,51 @@ struct ContactsSectionView: View {
 
 // MARK: - Unit Grouping & Contact Listing Helper
 
-struct ContactUnitGroupsView: View {
-    let contacts: [Contact]
-    let selected: String?
-    let depth: Int
-    var primaryUnit: String? = nil
-    var prioritizedUnits: [String] = []
-    var ministerialOrder: Bool = false
-    let onSelect: (String) -> Void
+public struct ContactUnitGroupsView: View {
+    public let contacts: [Contact]
+    public let selected: String?
+    public let depth: Int
+    public var primaryUnit: String? = nil
+    public var prioritizedUnits: [String] = []
+    public var ministerialOrder: Bool = false
+    public var favoriteNumbers: Set<String> = []
+    public var onToggleFavorite: ((String) -> Void)? = nil
+    public let onSelect: (String) -> Void
+
+    public init(
+        contacts: [Contact],
+        selected: String?,
+        depth: Int,
+        primaryUnit: String? = nil,
+        prioritizedUnits: [String] = [],
+        ministerialOrder: Bool = false,
+        favoriteNumbers: Set<String> = [],
+        onToggleFavorite: ((String) -> Void)? = nil,
+        onSelect: @escaping (String) -> Void
+    ) {
+        self.contacts = contacts
+        self.selected = selected
+        self.depth = depth
+        self.primaryUnit = primaryUnit
+        self.prioritizedUnits = prioritizedUnits
+        self.ministerialOrder = ministerialOrder
+        self.favoriteNumbers = favoriteNumbers
+        self.onToggleFavorite = onToggleFavorite
+        self.onSelect = onSelect
+    }
 
     private var groupedUnits: [(key: String, officers: [Contact])] {
         let dict = Dictionary(grouping: contacts) {
             $0.unit.trimmingCharacters(in: .whitespaces).isEmpty ? "Unit not specified" : $0.unit.trimmingCharacters(in: .whitespaces)
         }
-        
+
         return dict.keys.sorted { a, b in
-            // Primary unit comes first if specified
             if let primary = primaryUnit {
                 let isPriA = normalizedOrgLabel(a) == normalizedOrgLabel(primary)
                 let isPriB = normalizedOrgLabel(b) == normalizedOrgLabel(primary)
                 if isPriA && !isPriB { return true }
                 if !isPriA && isPriB { return false }
             }
-            // Prioritized units
             let idxA = prioritizedUnits.firstIndex(where: { normalizedOrgLabel($0) == normalizedOrgLabel(a) }) ?? Int.max
             let idxB = prioritizedUnits.firstIndex(where: { normalizedOrgLabel($0) == normalizedOrgLabel(b) }) ?? Int.max
             if idxA != idxB { return idxA < idxB }
@@ -245,7 +328,7 @@ struct ContactUnitGroupsView: View {
         }.map { (key: $0, officers: dict[$0] ?? []) }
     }
 
-    var body: some View {
+    public var body: some View {
         if groupedUnits.isEmpty {
             Text("No contacts listed.")
                 .font(.system(size: 12))
@@ -267,7 +350,14 @@ struct ContactUnitGroupsView: View {
                         let sortedOfficers = sortedContacts(entry.officers)
                         VStack(spacing: 3) {
                             ForEach(sortedOfficers.indices, id: \.self) { idx in
-                                ContactRowView(contact: sortedOfficers[idx], isDarker: idx % 2 == 1)
+                                let c = sortedOfficers[idx]
+                                let digits = String(c.mobile.filter { $0.isNumber }.suffix(10))
+                                ContactRowView(
+                                    contact: c,
+                                    isDarker: idx % 2 == 1,
+                                    isFavorite: favoriteNumbers.contains(digits),
+                                    onToggleFavorite: { onToggleFavorite?(digits) }
+                                )
                             }
                         }
                         .padding(.leading, CGFloat((depth + 1) * 6))
@@ -280,23 +370,9 @@ struct ContactUnitGroupsView: View {
 
     private func sortedContacts(_ list: [Contact]) -> [Contact] {
         if ministerialOrder {
-            return list.sorted { a, b in
-                let ordA = ministerialRankOrder(a.rank)
-                let ordB = ministerialRankOrder(b.rank)
-                if ordA != ordB { return ordA < ordB }
-                return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
-            }
+            return sortContactsMinisterial(list)
         } else {
-            return list.sorted { a, b in
-                let batchA = Int(a.batch.filter { $0.isNumber }) ?? Int.max
-                let batchB = Int(b.batch.filter { $0.isNumber }) ?? Int.max
-                if batchA != batchB { return batchA < batchB }
-                let rankA = rankOrder(a.rank)
-                let rankB = rankOrder(b.rank)
-                if rankA != rankB { return rankA < rankB }
-                return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
-            }
+            return sortContactsStandard(list)
         }
     }
 }
-

@@ -2,55 +2,89 @@ import SwiftUI
 
 struct ProfileView: View {
     @EnvironmentObject private var store: AppStore
+    @EnvironmentObject private var themeManager: TechThemeManager
     @State private var isEditing = false
 
     var body: some View {
         VStack(spacing: 12) {
             if let officer = store.session?.officer {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("Profile details")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundStyle(TechTheme.navy)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 16)
-                        .padding(.bottom, 8)
+                    // Header Card
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("TECHNOCOP PROFILE")
+                            .font(.system(size: 12 * themeManager.fontScale, weight: .bold))
+                            .foregroundColor(themeManager.accentColor)
+                            .tracking(0.5)
 
+                        Text("PTB in your fingertips")
+                            .font(.system(size: 11 * themeManager.fontScale, weight: .medium))
+                            .foregroundColor(themeManager.secondaryTextColor)
+
+                        Spacer().frame(height: 4)
+
+                        Text(officer.name)
+                            .font(.system(size: 22 * themeManager.fontScale, weight: .bold))
+                            .foregroundColor(themeManager.primaryTextColor)
+
+                        let sub = [officer.rank, officer.unit].filter { !$0.isEmpty }.joined(separator: " • ")
+                        Text(sub)
+                            .font(.system(size: 14 * themeManager.fontScale))
+                            .foregroundColor(themeManager.secondaryTextColor)
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(themeManager.lavenderWashColor)
+                    .cornerRadius(14)
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(themeManager.borderColor, lineWidth: 1))
+                    .padding(16)
+
+                    // Profile Details Title
+                    Text("Profile details")
+                        .font(.system(size: 18 * themeManager.fontScale, weight: .bold))
+                        .foregroundColor(themeManager.primaryTextColor)
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 6)
+
+                    // Field Rows matching Android exactly
                     VStack(alignment: .leading, spacing: 0) {
-                        profileDetailRow("Name", officer.name)
                         profileDetailRow("Rank", officer.rank)
                         profileDetailRow("Batch", officer.batch)
                         profileDetailRow("Zone", officer.zone)
                         profileDetailRow("Range", officer.range)
                         profileDetailRow("Unit", officer.unit)
-                        profileDetailRow("Unit_Categ", officer.technicalUnit)
-                        profileDetailRow("DOJ in present unit", officer.doj)
+                        profileDetailRow("Unit category", officer.technicalUnit)
+                        profileDetailRow("IFHRMS No.", officer.ifhrmsNo)
+                        profileDetailRow("Date of birth (DOB)", officer.dob)
+                        profileDetailRow("Date of enlistment (DOE)", officer.doe)
+                        profileDetailRow("Date of retirement (DOR)", officer.dor)
+                        profileDetailRow("Date joined present unit (DOJ)", officer.doj)
                         profileDetailRow("Mobile number", officer.mobile)
                     }
 
+                    // Edit Profile Button
                     Button {
                         isEditing = true
                     } label: {
                         Text("EDIT PROFILE")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(Color.white)
+                            .font(.system(size: 14.5 * themeManager.fontScale, weight: .bold))
+                            .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 46)
-                            .background(TechTheme.navy)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .background(themeManager.primaryColor)
+                            .cornerRadius(12)
                     }
                     .padding(16)
                 }
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(TechTheme.tableBorder, lineWidth: 1)
-                )
+                .background(themeManager.surfaceColor)
+                .cornerRadius(20)
+                .overlay(RoundedRectangle(cornerRadius: 20).stroke(themeManager.borderColor, lineWidth: 1))
             }
         }
         .sheet(isPresented: $isEditing) {
             if let officer = store.session?.officer {
                 EditProfileSheetView(officer: officer)
+                    .environmentObject(themeManager)
+                    .environmentObject(store)
             }
         }
     }
@@ -58,23 +92,24 @@ struct ProfileView: View {
     private func profileDetailRow(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
-                .font(.system(size: 12))
-                .foregroundStyle(Color.secondary)
+                .font(.system(size: 12 * themeManager.fontScale))
+                .foregroundColor(themeManager.secondaryTextColor)
             Text(value.isEmpty ? "—" : value)
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(TechTheme.navy)
+                .font(.system(size: 16 * themeManager.fontScale, weight: .medium))
+                .foregroundColor(themeManager.primaryTextColor)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
-        .overlay(Divider().opacity(0.3), alignment: .bottom)
+        .overlay(Divider().background(themeManager.borderColor), alignment: .bottom)
     }
 }
 
-// MARK: - Edit Profile Sheet with Dependent Pickers & Native DatePicker
+// MARK: - Edit Profile Sheet with All Android v3.21 Fields & Pickers
 
 struct EditProfileSheetView: View {
     @EnvironmentObject private var store: AppStore
+    @EnvironmentObject private var themeManager: TechThemeManager
     @Environment(\.dismiss) private var dismiss
 
     @State private var officer: Officer
@@ -83,21 +118,29 @@ struct EditProfileSheetView: View {
     @State private var isSaving = false
     @State private var statusMessage = ""
     @State private var isErrorMessage = false
-    @State private var selectedDate = Date()
-    @State private var hasDoj = false
+
+    // Date picker states
+    @State private var dobDate: Date = Date()
+    @State private var hasDob: Bool = false
+    @State private var doeDate: Date = Date()
+    @State private var hasDoe: Bool = false
+    @State private var dorDate: Date = Date()
+    @State private var hasDor: Bool = false
+    @State private var dojDate: Date = Date()
+    @State private var hasDoj: Bool = false
 
     init(officer: Officer) {
         _officer = State(initialValue: officer)
+        _hasDob = State(initialValue: !officer.dob.isEmpty)
+        _dobDate = State(initialValue: parseDate(officer.dob) ?? Date())
+        _hasDoe = State(initialValue: !officer.doe.isEmpty)
+        _doeDate = State(initialValue: parseDate(officer.doe) ?? Date())
+        _hasDor = State(initialValue: !officer.dor.isEmpty)
+        _dorDate = State(initialValue: parseDate(officer.dor) ?? Date())
         _hasDoj = State(initialValue: !officer.doj.isEmpty)
-        _selectedDate = State(initialValue: parseDOJDate(officer.doj) ?? Date())
-        _options = State(initialValue: nil)
-        _isLoadingOptions = State(initialValue: true)
-        _isSaving = State(initialValue: false)
-        _statusMessage = State(initialValue: "")
-        _isErrorMessage = State(initialValue: false)
+        _dojDate = State(initialValue: parseDate(officer.doj) ?? Date())
     }
 
-    // Dependent choices
     private var availableZones: [String] {
         let all = (options?.zones ?? []).filter { !$0.isEmpty }
         var list = all.sorted(by: profileZoneComparator())
@@ -112,7 +155,7 @@ struct EditProfileSheetView: View {
             guard row.count >= 2 else { return false }
             return officer.zone.isEmpty || normalizedOrgLabel(row[0]) == normalizedOrgLabel(officer.zone)
         }.map { $0[1] }
-        
+
         var list = Array(Set(matching.filter { !$0.isEmpty })).sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
         if !officer.range.isEmpty && !list.contains(officer.range) {
             list.insert(officer.range, at: 0)
@@ -165,33 +208,31 @@ struct EditProfileSheetView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Personal Details") {
+                Section("IFHRMS & Identification") {
+                    TextField("Enter IFHRMS No.", text: $officer.ifhrmsNo)
+                        .keyboardType(.numberPad)
                     TextField("Name", text: $officer.name)
                         .textContentType(.name)
-
                     HStack {
                         Text("Mobile number")
-                            .foregroundStyle(Color.secondary)
+                            .foregroundColor(themeManager.secondaryTextColor)
                         Spacer()
                         Text(officer.mobile)
-                            .foregroundStyle(TechTheme.navy)
+                            .foregroundColor(themeManager.primaryTextColor)
                     }
                 }
 
-                Section("Service & Unit Details") {
-                    // Rank Dropdown
+                Section("Rank & Service Assignment") {
                     Picker("Rank", selection: $officer.rank) {
                         Text("Select Rank").tag("")
                         ForEach(availableRanks, id: \.self) { Text($0).tag($0) }
                     }
 
-                    // Batch Dropdown
                     Picker("Batch", selection: $officer.batch) {
                         Text("Select Batch").tag("")
                         ForEach(options?.batches ?? [], id: \.self) { Text($0).tag($0) }
                     }
 
-                    // Zone Dropdown (Cascades: resets Range, Unit, Unit_Categ)
                     Picker("Zone", selection: $officer.zone) {
                         Text("Select Zone").tag("")
                         ForEach(availableZones, id: \.self) { Text($0).tag($0) }
@@ -202,7 +243,6 @@ struct EditProfileSheetView: View {
                         officer.technicalUnit = ""
                     }
 
-                    // Range Dropdown (Cascades: resets Unit, Unit_Categ)
                     Picker("Range", selection: $officer.range) {
                         Text("Select Range").tag("")
                         ForEach(availableRanges, id: \.self) { Text($0).tag($0) }
@@ -212,7 +252,6 @@ struct EditProfileSheetView: View {
                         officer.technicalUnit = ""
                     }
 
-                    // Unit Dropdown (Cascades: resets Unit_Categ)
                     Picker("Unit", selection: $officer.unit) {
                         Text("Select Unit").tag("")
                         ForEach(availableUnits, id: \.self) { Text($0).tag($0) }
@@ -221,33 +260,55 @@ struct EditProfileSheetView: View {
                         officer.technicalUnit = ""
                     }
 
-                    // Unit_Categ Dropdown
                     Picker("Unit_Categ", selection: $officer.technicalUnit) {
                         Text("Select Unit_Categ").tag("")
                         ForEach(availableCategories, id: \.self) { Text($0).tag($0) }
                     }
                 }
 
-                Section("Joining Date") {
-                    Toggle("DOJ in present unit", isOn: $hasDoj)
-                        .onChange(of: hasDoj) { enabled in
-                            if !enabled {
-                                officer.doj = ""
-                            } else {
-                                officer.doj = formatDOJDate(selectedDate)
-                            }
+                Section("Important Service Dates") {
+                    // DOB
+                    Toggle("Date of Birth (DOB)", isOn: $hasDob)
+                        .onChange(of: hasDob) { on in
+                            officer.dob = on ? formatDate(dobDate) : ""
                         }
+                    if hasDob {
+                        DatePicker("DOB", selection: $dobDate, displayedComponents: .date)
+                            .datePickerStyle(.compact)
+                            .onChange(of: dobDate) { date in officer.dob = formatDate(date) }
+                    }
 
-                    if hasDoj {
-                        DatePicker(
-                            "Date of Joining",
-                            selection: $selectedDate,
-                            displayedComponents: .date
-                        )
-                        .datePickerStyle(.compact)
-                        .onChange(of: selectedDate) { date in
-                            officer.doj = formatDOJDate(date)
+                    // DOE
+                    Toggle("Date of Enlistment (DOE)", isOn: $hasDoe)
+                        .onChange(of: hasDoe) { on in
+                            officer.doe = on ? formatDate(doeDate) : ""
                         }
+                    if hasDoe {
+                        DatePicker("DOE", selection: $doeDate, displayedComponents: .date)
+                            .datePickerStyle(.compact)
+                            .onChange(of: doeDate) { date in officer.doe = formatDate(date) }
+                    }
+
+                    // DOR
+                    Toggle("Date of Retirement (DOR)", isOn: $hasDor)
+                        .onChange(of: hasDor) { on in
+                            officer.dor = on ? formatDate(dorDate) : ""
+                        }
+                    if hasDor {
+                        DatePicker("DOR", selection: $dorDate, displayedComponents: .date)
+                            .datePickerStyle(.compact)
+                            .onChange(of: dorDate) { date in officer.dor = formatDate(date) }
+                    }
+
+                    // DOJ
+                    Toggle("DOJ in present unit", isOn: $hasDoj)
+                        .onChange(of: hasDoj) { on in
+                            officer.doj = on ? formatDate(dojDate) : ""
+                        }
+                    if hasDoj {
+                        DatePicker("DOJ", selection: $dojDate, displayedComponents: .date)
+                            .datePickerStyle(.compact)
+                            .onChange(of: dojDate) { date in officer.doj = formatDate(date) }
                     }
                 }
 
@@ -255,7 +316,7 @@ struct EditProfileSheetView: View {
                     Section {
                         Text(statusMessage)
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(isErrorMessage ? TechTheme.textError : Color.green)
+                            .foregroundColor(isErrorMessage ? Color.red : Color.green)
                     }
                 }
 
@@ -269,14 +330,14 @@ struct EditProfileSheetView: View {
                                 ProgressView()
                                     .padding(.trailing, 6)
                             }
-                            Text(isSaving ? "SYNCING…" : "SUBMIT CHANGES")
+                            Text(isSaving ? "SAVING…" : "SUBMIT CHANGES")
                                 .font(.system(size: 15, weight: .bold))
-                                .foregroundStyle(Color.white)
+                                .foregroundColor(.white)
                             Spacer()
                         }
                         .frame(height: 44)
-                        .background(canSubmit ? TechTheme.navy : Color.gray)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .background(canSubmit ? themeManager.primaryColor : Color.gray)
+                        .cornerRadius(8)
                     }
                     .disabled(!canSubmit || isSaving)
                     .listRowInsets(EdgeInsets())
@@ -293,7 +354,7 @@ struct EditProfileSheetView: View {
                 do {
                     options = try await store.loadProfileOptions()
                 } catch {
-                    statusMessage = "Profile options are temporarily unavailable."
+                    statusMessage = "Profile choices are temporarily unavailable."
                     isErrorMessage = true
                 }
                 isLoadingOptions = false
@@ -305,7 +366,7 @@ struct EditProfileSheetView: View {
         !officer.name.trimmingCharacters(in: .whitespaces).isEmpty &&
         !officer.rank.isEmpty &&
         !officer.unit.isEmpty &&
-        !officer.mobile.isEmpty
+        officer.mobile.filter { $0.isNumber }.count == 10
     }
 
     private func saveProfile() async {
@@ -324,4 +385,40 @@ struct EditProfileSheetView: View {
             statusMessage = "Could not update profile. Please try again."
         }
     }
+}
+
+private func parseDate(_ str: String) -> Date? {
+    let clean = str.trimmingCharacters(in: .whitespacesAndNewlines)
+    if clean.isEmpty { return nil }
+    let formatters: [DateFormatter] = [
+        {
+            let df = DateFormatter()
+            df.dateFormat = "yyyy-MM-dd"
+            df.locale = Locale(identifier: "en_US_POSIX")
+            return df
+        }(),
+        {
+            let df = DateFormatter()
+            df.dateFormat = "dd-MM-yyyy"
+            df.locale = Locale(identifier: "en_US_POSIX")
+            return df
+        }(),
+        {
+            let df = DateFormatter()
+            df.dateFormat = "dd/MM/yyyy"
+            df.locale = Locale(identifier: "en_US_POSIX")
+            return df
+        }()
+    ]
+    for df in formatters {
+        if let d = df.date(from: clean) { return d }
+    }
+    return nil
+}
+
+private func formatDate(_ date: Date) -> String {
+    let df = DateFormatter()
+    df.dateFormat = "yyyy-MM-dd"
+    df.locale = Locale(identifier: "en_US_POSIX")
+    return df.string(from: date)
 }
