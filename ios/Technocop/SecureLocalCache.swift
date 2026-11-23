@@ -105,6 +105,31 @@ public actor SecureLocalCache {
         read([String].self, from: "favorites.cache")
     }
 
+    // MARK: - Aliases for Dashboard Content & Retirement
+    public func saveContent(_ content: DashboardContent) {
+        saveDashboardContent(content)
+    }
+
+    public func loadContent() -> CachedItem<DashboardContent>? {
+        loadDashboardContent()
+    }
+
+    public func saveRetirement(_ forecast: RetirementForecast) {
+        saveRetirementForecast(forecast)
+    }
+
+    public func loadRetirement() -> CachedItem<RetirementForecast>? {
+        loadRetirementForecast()
+    }
+
+    public func saveFavorites(_ mobiles: Set<String>) {
+        write(Array(mobiles), to: "favorites.cache")
+    }
+
+    public func loadFavorites() -> Set<String> {
+        Set(read([String].self, from: "favorites.cache") ?? [])
+    }
+
     // MARK: - Generic Secure File Helpers
 
     private func write<T: Codable>(_ object: T, to filename: String) {

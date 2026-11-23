@@ -156,7 +156,7 @@ public struct APIClient {
 
     // MARK: - Birthdays, Content & Retirements (Matching Android Api.kt)
 
-    public func birthdays(token: String) async throws -> BirthdayFeed {
+    public func birthdays(token: String, mobile: String? = nil) async throws -> BirthdayFeed {
         let j = try await post("birthdays", ["token": token])
         let available = j["available"] as? Bool ?? false
         var persons: [BirthdayPerson] = []

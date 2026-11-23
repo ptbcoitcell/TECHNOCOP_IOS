@@ -166,6 +166,58 @@ public final class TechThemeManager: ObservableObject {
             setFontScale(fontScale - 0.15)
         }
     }
+
+    public var isDark: Bool {
+        isDarkActive || themeMode.uppercased() == "DARK"
+    }
+
+    public var paletteId: String {
+        palette.id
+    }
+
+    public var availablePalettes: [AppPalette] {
+        AllAppPalettes
+    }
+
+    public var preferredColorScheme: ColorScheme? {
+        switch themeMode.uppercased() {
+        case "LIGHT": return .light
+        case "DARK": return .dark
+        default: return nil
+        }
+    }
+
+    public var primaryColor: Color {
+        isDark ? Color.white : palette.primary
+    }
+
+    public var accentColor: Color {
+        isDark ? palette.darkPrimary : palette.accent
+    }
+
+    public var surfaceColor: Color {
+        isDark ? Color(red: 22/255, green: 25/255, blue: 34/255) : Color.white
+    }
+
+    public var backgroundColor: Color {
+        isDark ? Color(red: 12/255, green: 14/255, blue: 20/255) : Color(red: 247/255, green: 244/255, blue: 252/255)
+    }
+
+    public var borderColor: Color {
+        isDark ? Color.white.opacity(0.15) : Color(red: 212/255, green: 204/255, blue: 232/255)
+    }
+
+    public var primaryTextColor: Color {
+        isDark ? Color.white : palette.primary
+    }
+
+    public var secondaryTextColor: Color {
+        isDark ? Color.white.opacity(0.7) : Color(red: 78/255, green: 88/255, blue: 113/255)
+    }
+
+    public var lavenderWashColor: Color {
+        isDark ? Color(red: 27/255, green: 31/255, blue: 45/255) : Color(red: 240/255, green: 237/255, blue: 255/255)
+    }
 }
 
 // MARK: - Legacy and Dynamic TechTheme Namespace

@@ -947,6 +947,10 @@ public func computeRetirementForecastFromContacts(_ contacts: [Contact]) -> Reti
     return RetirementForecast(available: !years.isEmpty, years: years)
 }
 
+public func enrichRetirementForecast(forecast: RetirementForecast, contacts: [Contact]) -> RetirementForecast {
+    enrichRetirementForecast(forecast, contacts: contacts)
+}
+
 public func enrichRetirementForecast(_ forecast: RetirementForecast, contacts: [Contact]) -> RetirementForecast {
     let enrichedYears = forecast.years.map { yearItem in
         var enrichedOfficers: [RetirementOfficer] = []
