@@ -1114,7 +1114,7 @@ public struct Thirukkural: Identifiable, Equatable {
     }
 }
 
-public object ThirukkuralRepository {
+public struct ThirukkuralRepository {
     public static let kurals: [Thirukkural] = [
         Thirukkural(
             number: 595,

@@ -268,7 +268,7 @@ public enum KnowledgeBaseArticles {
             difficultyLevel = .intermediate,
             domain = .software,
             requiredTools = listOf("Task Manager", "PowerShell (Run as Administrator)"),
-            stepByStepSolution = listOf("Press Ctrl + Shift + Esc to open Task Manager.", "Locate 'StartMenuExperienceHost.exe' in Details tab, right-click and click 'End task' (Windows will restart it automatically).", "If Start Menu still unresponsive, open File -> Run new task -> type 'powershell', check 'Create this task with administrative privileges' -> OK.", "Paste command: 'Get-AppXPackage -AllUsers | Foreach {Add-AppxPackage -DisableDevelopmentMode -Register \"\$(\$_.InstallLocation)\\AppXManifest.xml\"}'.", "Press Enter, allow the script to register shell packages, and reboot the PC."),
+            stepByStepSolution = listOf("Press Ctrl + Shift + Esc to open Task Manager.", "Locate 'StartMenuExperienceHost.exe' in Details tab, right-click and click 'End task' (Windows will restart it automatically).", "If Start Menu still unresponsive, open File -> Run new task -> type 'powershell', check 'Create this task with administrative privileges' -> OK.", "Paste command: 'Get-AppXPackage -AllUsers | Foreach {Add-AppxPackage -DisableDevelopmentMode -Register \"$($_.InstallLocation)\\AppXManifest.xml\"}'.", "Press Enter, allow the script to register shell packages, and reboot the PC."),
             diagnosticCommands = listOf(DiagnosticCommand("taskkill /f /im StartMenuExperienceHost.exe", "Kills hung Start Menu host process"), DiagnosticCommand("Get-AppXPackage -AllUsers", "Lists all registered Universal Windows Platform apps")),
             expectedResult = "Start menu opens instantly; taskbar icons, clock, and search respond smoothly.",
             safetyPrecautions = "Do not interrupt PowerShell while AppX package re-registration is running.",
@@ -2717,8 +2717,9 @@ public enum KnowledgeBaseArticles {
             whenToEscalate = "If phantom wakeups continue, disable 'Wake on LAN' and 'Wake on Magic Packet' in BIOS settings.",
             officialReferenceUrl = "https://learn.microsoft.com/en-us/windows-hardware/design/device-experiences/powercfg-command-line-options",
             lastVerifiedDate = "23/11/2026",
-            tamilExplanation = "à®•à®®à¯à®ªà¯à®¯à¯‚à®Ÿà¯à®Ÿà®°à¯ à®¤à¯‚à®™à¯à®•à®¾à®®à®²à¯ à®¤à®¾à®©à®¾à®• à®µà®¿à®´à®¿à®¤à¯à®¤à®¾à®²à¯ CMD-à®²à¯ 'powercfg /requests' à®®à®±à¯à®±à¯à®®à¯ 'powercfg /energy' à®®à¯‚à®²à®®à¯ à®Žà®¨à¯à®¤ à®šà®¾à®¤à®©à®®à¯ à®¤à®Ÿà¯à®•à¯à®•à®¿à®±à®¤à¯ à®Žà®© à®•à®£à¯à®Ÿà®±à®¿à®¯à®²à®¾à®®à¯."
-            ]
+            tamilExplanation = "கம்ப்யூட்டர் தூங்காமல் தானாக விழித்தால் CMD-ல் 'powercfg /requests' மற்றும் 'powercfg /energy' மூலம் எந்த சாதனம் தடுக்கிறது என கண்டறியலாம்."
+        )
+    ]
 }
 
 // MARK: - Knowledge Centre Repository
